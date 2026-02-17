@@ -46,6 +46,23 @@ public class CheepRepository : ICheepRepository
 
         return result;
     }
+    
+    public async Task<List<string>> ReadXAmountOfCheeps(int no)
+    {
+        var query = (
+            from cheep in _dbContext.Cheeps.Include(c => c.Author)
+            select cheep).OrderByDescending(c => c.TimeStamp).Take(no);
+        
+        var result = await query.ToListAsync();
+
+        var cheepList = new List<string>();
+        foreach (var cheep in result)
+        {
+            cheepList.Add(cheep.Text);
+        }
+
+        return cheepList;
+    }
 
     public async Task<List<Cheep>> ReadCheepsPerson(string name, int page)
     {
@@ -144,6 +161,19 @@ public class CheepRepository : ICheepRepository
         var returnList = await query.ToListAsync();
         return returnList;
     }
+    
+    public async Task<List<Cheep>>  GetAuthorXAmountCheeps(int authorId, int no)
+    {
+        var query = (
+            from cheep in _dbContext.Cheeps
+            where cheep.AuthorId == authorId 
+            select cheep
+        ).Take(no);
+        
+        var returnList = await query.ToListAsync();
+        return returnList;
+    }
+   
 
     public async Task DeleteCheep(Cheep cheep)
     {

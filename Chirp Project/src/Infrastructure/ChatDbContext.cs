@@ -18,8 +18,8 @@ public class ChatDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Cheep> Cheeps { get; set; }
 
     public DbSet<Author> Authors { get; set; }
-
     
+    public DbSet<Latest> Latests { get; set; }
 
     public ChatDbContext(DbContextOptions<ChatDbContext> options) : base(options)
     {

@@ -197,6 +197,9 @@ public class Program
         builder.Services.AddScoped<ICheepService, CheepService>();
         builder.Services.AddScoped<ICheepRepository, CheepRepository>();
         builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+        builder.Services.AddScoped<ILatestsRepository, LatestsRepository>();
+
+        builder.Services.AddControllers();
 
         builder.Services.ConfigureApplicationCookie(options =>
         {
@@ -236,7 +239,7 @@ public class Program
         app.UseStaticFiles();
 
         app.UseRouting();
-
+        app.MapControllers();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseSession();

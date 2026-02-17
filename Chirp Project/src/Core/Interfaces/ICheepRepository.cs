@@ -21,6 +21,13 @@ public interface ICheepRepository
     /// <param name="page">Which page to get</param>
     /// <returns>List of Cheeps</returns>
     Task<List<Cheep>> ReadCheeps(int page);
+
+    /// <summary>
+    /// Query the table for a list of x amount of string Cheeps 
+    /// </summary>
+    /// <param name="no">X amount of cheeps</param>
+    /// <returns>List of string cheeps</returns>
+    public Task<List<string>> ReadXAmountOfCheeps(int no);
     
     /// <summary>
     /// Query the table for a list of Cheeps from a specific author name

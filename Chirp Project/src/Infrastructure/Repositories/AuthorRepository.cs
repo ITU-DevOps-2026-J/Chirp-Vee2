@@ -111,6 +111,26 @@ public class AuthorRepository : IAuthorRepository
         }
         
     }
+    
+    public async Task<List<int>> ReturnFollowAuthorsIds(string email, int? no)
+    {
+        var query = (
+            from person in _dbContext.Authors
+            where person.Email == email
+            select person.Follows
+        );
+
+        var result = await query.ToListAsync();
+        try
+        {
+            return result[0].Take(no.Value).ToList();
+        }
+        catch
+        {
+            return new List<int>();
+        }
+        
+    }
 
     public async Task<int> ReturnAuthorsId(string email)
     {
