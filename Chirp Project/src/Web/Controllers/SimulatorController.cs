@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Core.DTO;
 using Core.Interfaces;
 using Core.Model;
+using Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Web.Controllers
@@ -11,11 +13,18 @@ namespace Web.Controllers
     {
         private readonly ICheepService _cheepService;
         private readonly ILatestsRepository _latestsRepository;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public SimulatorController(ICheepService cheepService, ILatestsRepository latestsRepository)
+
+        public SimulatorController(
+            ICheepService cheepService, 
+            ILatestsRepository latestsRepository, 
+            UserManager<ApplicationUser> userManager 
+        )
         {
             _cheepService = cheepService;
             _latestsRepository = latestsRepository;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -217,8 +226,27 @@ namespace Web.Controllers
                 !payload.Email.Contains("@") ||
                 payload.Pwd.IsNullOrEmpty())
                 return StatusCode(400);
-            
-            //todo implement register
+
+            ApplicationUser user;
+            try
+            {
+                user = Activator.CreateInstance<ApplicationUser>();
+            }
+            catch
+            {
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+                                                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                                                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+            }
+
+            await _userManager.SetUserNameAsync(user, payload.Username);
+            await _userManager.SetEmailAsync(user, payload.Email);
+            await _userManager.CreateAsync(user, payload.Pwd);
+            _cheepService.CreateAuthor(payload.Username, payload.Email);
+    
+            // Auto-confirm email for development/testing
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            await _userManager.ConfirmEmailAsync(user, code);
             
             return StatusCode(204);
         }
