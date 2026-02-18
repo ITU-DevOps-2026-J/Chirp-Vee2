@@ -8,7 +8,8 @@ namespace Core.Model;
 /// </summary>
 public class Author
 {
-    public required int AuthorId { get; set; }
+    [Key]
+    public int AuthorId { get; set; }
     [StringLength(200)]
     public required string Name { get; set; }
     [StringLength(200)]

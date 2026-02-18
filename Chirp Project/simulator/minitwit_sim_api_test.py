@@ -7,7 +7,7 @@ from pathlib import Path
 from contextlib import closing
 
 
-BASE_URL = 'http://localhost:8080'
+BASE_URL = 'http://localhost:5273'
 BASE_DIR = Path(__file__).parent.parent          # goes up to "Chirp Project"
 DATABASE = BASE_DIR / "src" / "Web" / "chat.db"
 USERNAME = 'simulator'
@@ -21,14 +21,10 @@ HEADERS = {'Connection': 'close',
 
 def init_db():
     """Creates the database tables."""
-    with closing(sqlite3.connect(DATABASE)) as db:
-        with open("schema.sql") as fp:
-            db.cursor().executescript(fp.read())
-        db.commit()
+    return sqlite3.connect(DATABASE)
 
 
 # Empty the database and initialize the schema again
-Path(DATABASE).unlink()
 init_db()
 
 
@@ -197,3 +193,14 @@ def test_a_unfollows_b():
     response = requests.get(f'{BASE_URL}/latest', headers=HEADERS)
     assert response.json()['latest'] == 11
 
+def test_cleanup_db():
+    """Deletes all test data inserted by the tests."""
+    with sqlite3.connect(DATABASE) as db:
+        cursor = db.cursor()
+
+        # Delete test messages
+        cursor.execute("DELETE FROM Cheeps WHERE text = ?", ("Blub!",))
+
+        # Delete test users
+        cursor.execute("DELETE FROM Authors WHERE name IN (?, ?, ?, ?)", ("a", "b", "c", "test"))
+        db.commit()

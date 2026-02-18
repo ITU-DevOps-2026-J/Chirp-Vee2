@@ -19,7 +19,7 @@ public interface ICheepService
     /// </summary>
     /// <param name="no">X amount of cheeps</param>
     /// <returns>List of string cheeps</returns>
-    public Task<List<string>> GetXAmountOfCheeps(int no);
+    public Task<List<Dictionary<string,string>>> GetXAmountOfCheeps(int no);
     
     /// <summary>
     /// Get a List of All Cheeps from a specific Author ID
@@ -44,7 +44,7 @@ public interface ICheepService
     /// <param name="username"></param>
     /// <param name="page"></param>
     /// <returns></returns>
-    public Task<List<string>> GetXAmountUserCheepsByUsername(string username, int page);
+    public Task<List<Dictionary<string,string>>> GetXAmountUserCheepsByUsername(string username, int page);
     /// <summary>
     /// Get a List of Cheeps from a list of Author IDs
     /// </summary>

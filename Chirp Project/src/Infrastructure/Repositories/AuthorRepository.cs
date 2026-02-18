@@ -19,7 +19,6 @@ public class AuthorRepository : IAuthorRepository
     {
         var newAuthor = new Author()
         {
-            AuthorId = FindNewAuthorId().Result,
             Name = name,
             Email = email,
             Cheeps = new List<Cheep>()

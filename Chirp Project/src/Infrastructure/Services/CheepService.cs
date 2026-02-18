@@ -25,7 +25,7 @@ public class CheepService : ICheepService
         return await _cheepRepository.ReadCheeps(page);
     }
     
-    public async Task<List<string>> GetXAmountOfCheeps(int no)
+    public async Task<List<Dictionary<string,string>>> GetXAmountOfCheeps(int no)
     {
         return await _cheepRepository.ReadXAmountOfCheeps(no);
     }
@@ -254,14 +254,18 @@ public class CheepService : ICheepService
         return cheeps;
     }
     
-    public async Task<List<string>> GetXAmountUserCheepsByUsername(string username, int page)
+    public async Task<List<Dictionary<string,string>>> GetXAmountUserCheepsByUsername(string username, int page)
     {
         var author = await _authorRepository.ReturnBasedOnNameAsync(username);
         var userCheeps = await GetXAmountCheepsFromAuthorId(author.AuthorId, page);
-        var cheeps = new List<string>();
+        var cheeps = new List<Dictionary<string,string>>();
         foreach (var cheep in userCheeps)
         {
-            cheeps.Add(cheep.Text);
+            var dict = new Dictionary<string, string>();
+            dict.Add("content", cheep.Text);
+            dict.Add("pub_date", cheep.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss "));
+            dict.Add("user", cheep.Author.Name);
+            cheeps.Add(dict);;
         }
 
         return cheeps;

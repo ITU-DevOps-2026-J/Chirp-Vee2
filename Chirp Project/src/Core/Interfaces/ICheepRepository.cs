@@ -27,7 +27,7 @@ public interface ICheepRepository
     /// </summary>
     /// <param name="no">X amount of cheeps</param>
     /// <returns>List of string cheeps</returns>
-    public Task<List<string>> ReadXAmountOfCheeps(int no);
+    public Task<List<Dictionary<string,string>>> ReadXAmountOfCheeps(int no);
     
     /// <summary>
     /// Query the table for a list of Cheeps from a specific author name

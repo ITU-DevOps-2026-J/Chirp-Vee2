@@ -47,7 +47,7 @@ public class CheepRepository : ICheepRepository
         return result;
     }
     
-    public async Task<List<string>> ReadXAmountOfCheeps(int no)
+    public async Task<List<Dictionary<string,string>>> ReadXAmountOfCheeps(int no)
     {
         var query = (
             from cheep in _dbContext.Cheeps.Include(c => c.Author)
@@ -55,10 +55,14 @@ public class CheepRepository : ICheepRepository
         
         var result = await query.ToListAsync();
 
-        var cheepList = new List<string>();
+        var cheepList = new List<Dictionary<string, string>>();
         foreach (var cheep in result)
         {
-            cheepList.Add(cheep.Text);
+            var dict = new Dictionary<string, string>();
+            dict.Add("content", cheep.Text);
+            dict.Add("pub_date", cheep.TimeStamp.ToString("yyyy-mm-dd hh:mm:ss "));
+            dict.Add("user", cheep.Author.Name);
+            cheepList.Add(dict);
         }
 
         return cheepList;

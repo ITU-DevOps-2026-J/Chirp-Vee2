@@ -135,10 +135,7 @@ namespace Web.Controllers
                 _latestsRepository.AddLatest(latest);
             
             var cmessages = await _cheepService.GetXAmountOfCheeps(no!.Value);
-            return StatusCode(200, new
-            {
-                messages = cmessages
-            });
+            return StatusCode(200, cmessages);
         }
         
         [HttpGet]
@@ -169,11 +166,8 @@ namespace Web.Controllers
             if (latest.HasValue)
                 _latestsRepository.AddLatest(latest);
             
-            var cmessages = _cheepService.GetXAmountUserCheepsByUsername(username, no!.Value);
-            return StatusCode(200, new
-            {
-                messages = cmessages
-            });
+            var cmessages = await _cheepService.GetXAmountUserCheepsByUsername(username, no!.Value);
+            return StatusCode(200, cmessages);
         }
         
         [HttpPost]
@@ -226,24 +220,16 @@ namespace Web.Controllers
                 !payload.Email.Contains("@") ||
                 payload.Pwd.IsNullOrEmpty())
                 return StatusCode(400);
-
-            ApplicationUser user;
-            try
-            {
-                user = Activator.CreateInstance<ApplicationUser>();
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                                                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                                                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
-            }
-
-            await _userManager.SetUserNameAsync(user, payload.Username);
-            await _userManager.SetEmailAsync(user, payload.Email);
-            await _userManager.CreateAsync(user, payload.Pwd);
+            
             _cheepService.CreateAuthor(payload.Username, payload.Email);
-    
+            
+            var user = new ApplicationUser
+            {
+                UserName = payload.Username,
+                Email = payload.Email
+            };
+            await _userManager.CreateAsync(user, payload.Pwd);
+            
             // Auto-confirm email for development/testing
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             await _userManager.ConfirmEmailAsync(user, code);
