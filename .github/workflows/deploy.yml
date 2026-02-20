@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Chirp\ Project/Dockerfile
+          file: ./Chirp-Project/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache
@@ -64,7 +64,7 @@ jobs:
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/Chirp\ Project/deploy.sh'
+          '/Chirp-Project/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
