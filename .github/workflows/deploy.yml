@@ -62,7 +62,7 @@ jobs:
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
         run: |
-          chmod +x ../vagrant/deploy.sh
+          chmod +x ../Chirp-Project/deploy.sh
           ssh $SSH_USER@$SSH_HOST -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
           '../vagrant/deploy.sh'
         env:
