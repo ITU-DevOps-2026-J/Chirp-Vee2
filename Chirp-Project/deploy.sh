@@ -1,6 +1,6 @@
 source ~/.bash_profile
 
-cd vagrant
+cd Chirp-Project
 
 docker compose pull
 docker compose up -d
