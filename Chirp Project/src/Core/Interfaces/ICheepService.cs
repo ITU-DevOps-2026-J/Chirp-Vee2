@@ -13,6 +13,13 @@ public interface ICheepService
     /// <param name="page">Page to look up</param>
     /// <returns>List of Cheeps</returns>
     public Task<List<Cheep>> GetCheeps(int page);
+
+    /// <summary>
+    /// Get a list of x amount Cheeps in string
+    /// </summary>
+    /// <param name="no">X amount of cheeps</param>
+    /// <returns>List of string cheeps</returns>
+    public Task<List<Dictionary<string,string>>> GetXAmountOfCheeps(int no);
     
     /// <summary>
     /// Get a List of All Cheeps from a specific Author ID
@@ -21,7 +28,23 @@ public interface ICheepService
     /// <param name="page">Page to look up</param>
     /// <returns>List of Cheeps filered by Author ID</returns>
     public Task<List<Cheep>> GetCheepsFromAuthorId(int authorId, int page);
-    
+
+    /// <summary>
+    /// Gets a list of x amount of cheeps from a specific authorid
+    /// </summary>
+    /// <param name="authorId"></param>
+    /// <param name="no"></param>
+    /// <returns></returns>
+    public Task<List<Cheep>> GetXAmountCheepsFromAuthorId(int authorId, int no);
+
+
+    /// <summary>
+    /// GetXAmountUserCheepsByUsername
+    /// </summary>
+    /// <param name="username"></param>
+    /// <param name="page"></param>
+    /// <returns></returns>
+    public Task<List<Dictionary<string,string>>> GetXAmountUserCheepsByUsername(string username, int page);
     /// <summary>
     /// Get a List of Cheeps from a list of Author IDs
     /// </summary>
@@ -143,6 +166,14 @@ public interface ICheepService
     /// <param name="email">Author's email's to get from</param>
     /// <returns>List of Author Following's AuthorViewModels</returns>
     public Task<List<AuthorViewModel>> GetFollowerViewModel(string email);
+
+/// <summary>
+    /// Get a List of AuthorViewModels for a specific author's following list using their username
+    /// </summary>
+    /// <param name="username">Author's username to get from</param>
+    /// <returns>List of Author Following's AuthorViewModels</returns>
+    public Task<List<string>> GetFollowerViewModelByUsername(string username, int? no);
+
 
     /// <summary>
     /// Update a Cheep's LikedIDs using the User's email

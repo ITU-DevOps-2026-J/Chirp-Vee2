@@ -24,11 +24,22 @@ public class CheepService : ICheepService
     {
         return await _cheepRepository.ReadCheeps(page);
     }
+    
+    public async Task<List<Dictionary<string,string>>> GetXAmountOfCheeps(int no)
+    {
+        return await _cheepRepository.ReadXAmountOfCheeps(no);
+    }
 
     public async Task<List<Cheep>> GetCheepsFromAuthorId(int authorId, int page)
     {
         // filter by the provided author name
         return await _cheepRepository.GetAuthorCheeps(authorId);
+    }
+    
+    public async Task<List<Cheep>> GetXAmountCheepsFromAuthorId(int authorId, int no)
+    {
+        // filter by the provided author name
+        return await _cheepRepository.GetAuthorXAmountCheeps(authorId, no);
     }
 
     public async Task<List<Cheep>> GetCheepsFromFollowed(List<int> follows, int page = 0)
@@ -79,6 +90,11 @@ public class CheepService : ICheepService
     {
         return await _authorRepository.ReturnFollowAuthorsIds(email);
     }
+    
+    public async Task<List<int>> GetFollowers(string email, int? no)
+    {
+        return await _authorRepository.ReturnFollowAuthorsIds(email, no);
+    }
 
     public async Task CreateCheep(string email, string msg)
     {
@@ -94,7 +110,6 @@ public class CheepService : ICheepService
     {
         _authorRepository.CreateAuthor(author, email);
     }
-
 
     public void AddFollowerId(Author author, int id)
     {
@@ -238,6 +253,23 @@ public class CheepService : ICheepService
 
         return cheeps;
     }
+    
+    public async Task<List<Dictionary<string,string>>> GetXAmountUserCheepsByUsername(string username, int page)
+    {
+        var author = await _authorRepository.ReturnBasedOnNameAsync(username);
+        var userCheeps = await GetXAmountCheepsFromAuthorId(author.AuthorId, page);
+        var cheeps = new List<Dictionary<string,string>>();
+        foreach (var cheep in userCheeps)
+        {
+            var dict = new Dictionary<string, string>();
+            dict.Add("content", cheep.Text);
+            dict.Add("pub_date", cheep.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss "));
+            dict.Add("user", cheep.Author.Name);
+            cheeps.Add(dict);;
+        }
+
+        return cheeps;
+    }
 
     public async Task<AuthorViewModel> GetAuthorViewModel(string email)
     {
@@ -260,6 +292,25 @@ public class CheepService : ICheepService
 
         return followerViewModels;
     }
+
+    public async Task<List<string>> GetFollowerViewModelByUsername(string username, int? no)
+    {
+        var author = await _authorRepository.ReturnBasedOnNameAsync(username);
+        var email = author.Email; 
+        var followerIds = await GetFollowers(email, no);
+        var followerViewModels = new List<string>();
+        if (followerIds.Count == 0)
+            return followerViewModels;
+        
+        var followers = await _authorRepository.GetAuthorsFromIdList(followerIds);
+        foreach (var followerAuthor in followers)
+        {
+            followerViewModels.Add(followerAuthor.Name);
+        }
+
+        return followerViewModels;
+    }
+
 
     public async Task UpdateCheepLikes(int cheepId, string userEmail)
     {

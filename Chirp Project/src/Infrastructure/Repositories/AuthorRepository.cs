@@ -19,7 +19,6 @@ public class AuthorRepository : IAuthorRepository
     {
         var newAuthor = new Author()
         {
-            AuthorId = FindNewAuthorId().Result,
             Name = name,
             Email = email,
             Cheeps = new List<Cheep>()
@@ -104,6 +103,26 @@ public class AuthorRepository : IAuthorRepository
         try
         {
             return result[0];
+        }
+        catch
+        {
+            return new List<int>();
+        }
+        
+    }
+    
+    public async Task<List<int>> ReturnFollowAuthorsIds(string email, int? no)
+    {
+        var query = (
+            from person in _dbContext.Authors
+            where person.Email == email
+            select person.Follows
+        );
+
+        var result = await query.ToListAsync();
+        try
+        {
+            return result[0].Take(no.Value).ToList();
         }
         catch
         {
