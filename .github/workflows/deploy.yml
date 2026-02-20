@@ -62,11 +62,8 @@ jobs:
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
         run: |
-              ssh -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
-              export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }};
-              chmod +x ../vagrant/deploy.sh;
-              ../vagrant/deploy.sh
-              "
+          chmod +x Chirp-Project/deploy.sh
+          ssh $SSH_USER@$SSH_HOST -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no 'chmod +x ../vagrant/deploy.sh && ../vagrant/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
