@@ -36,8 +36,8 @@ jobs:
       - name: Build and push itu-minitwit
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ../Chirp-Project/Dockerfile
+          context: Chirp-Project
+          file: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache
