@@ -6,6 +6,8 @@ on:
     branches:
       - main
   # allow manual triggers for now too
+  tag:
+    - "test"
   workflow_dispatch:
     manual: true
 
