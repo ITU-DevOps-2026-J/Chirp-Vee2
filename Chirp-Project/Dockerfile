@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /App
 
 # Copy everything
-COPY . ./
+COPY ./src ./
 # Restore as distinct layers
 RUN dotnet restore
 # Build and publish a release
