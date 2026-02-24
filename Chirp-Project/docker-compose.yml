@@ -1,6 +1,14 @@
 services:
   app:
+    environment:
+      - ConnectionStrings__DefaultConnection=Data Source=/App/data/app.db
     image: ${DOCKER_USERNAME}/itu-minitwit
+    volumes:
+      - db-data:/App/data
     ports:
       - "8080:8080"
     restart: unless-stopped
+
+volumes:
+  db-data:
+    name: minitwit-data

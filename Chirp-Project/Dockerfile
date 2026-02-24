@@ -4,6 +4,9 @@ WORKDIR /App
 
 # Copy everything
 COPY ./src ./
+
+# Create volume directory
+RUN mkdir -p /App/data
 # Restore as distinct layers
 RUN dotnet restore Web/Web.csproj
 # Build and publish a release
