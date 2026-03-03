@@ -15,7 +15,7 @@
      end
      server.vm.hostname = "itu-minitwit"
      server.vm.provision "shell", privileged: true, inline: <<-SHELL
-        cd "Chirp Project"
+        cd "Chirp-Project"
        ./docker-cli.sh
 
        docker build -t vagrant-minitwit:latest .
