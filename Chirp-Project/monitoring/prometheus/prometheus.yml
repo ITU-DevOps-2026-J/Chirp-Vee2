@@ -27,3 +27,4 @@ scrape_configs:
       - targets: ['minitwit:8080']
         labels:
           group: 'production'
+    metrics_path: '/monitoring/metrics'

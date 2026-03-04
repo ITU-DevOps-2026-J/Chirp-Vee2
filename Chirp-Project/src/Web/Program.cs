@@ -5,6 +5,7 @@ using Infrastructure.Services;
 using Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Prometheus;
 
 namespace Web;
 
@@ -198,7 +199,7 @@ public class Program
         builder.Services.AddScoped<ICheepRepository, CheepRepository>();
         builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
         builder.Services.AddScoped<ILatestsRepository, LatestsRepository>();
-    
+        
         builder.Services.AddControllers();
 
         builder.Services.ConfigureApplicationCookie(options =>
@@ -240,7 +241,9 @@ public class Program
         app.UseStaticFiles();
 
         app.UseRouting();
+        app.UseHttpMetrics();
         app.MapControllers();
+        app.MapMetrics("/monitoring/metrics");
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseSession();
