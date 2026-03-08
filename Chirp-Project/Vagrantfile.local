@@ -10,16 +10,29 @@
  
    config.vm.define "itu-minitwit", primary: true do |server|
      server.vm.network "forwarded_port", guest: 8080, host: 8080
+     server.vm.network "forwarded_port", guest: 3000, host: 3000
+     server.vm.network "forwarded_port", guest: 9090, host: 9090
      server.vm.provider "virtualbox" do |vb|
        vb.memory = "1024"
      end
      server.vm.hostname = "itu-minitwit"
+     server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+     server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
      server.vm.provision "shell", privileged: true, inline: <<-SHELL
-        cd "Chirp-Project"
-       ./docker-cli.sh
+     # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
+       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+       fi
+          
+       source $HOME/.bash_profile
 
-       docker build -t vagrant-minitwit:latest .
-       docker run -d -p 8080:8080 --name minitwit vagrant-minitwit:latest
+     
+       cd "Chirp-Project"
+       ./docker-cli.sh
+       ./deploy.sh
+       
+       # docker build -t vagrant-minitwit:latest .
+       # docker run -d -p 8080:8080 --name minitwit vagrant-minitwit:latest
      SHELL
    end
  end
