@@ -4,7 +4,7 @@ networks:
     name: itu-minitwit-network
 
 services:
-  minitwit:
+  app:
     environment:
       - ConnectionStrings__DefaultConnection=Data Source=/App/data/app.db
     image: ${DOCKER_USERNAME}/itu-minitwit
