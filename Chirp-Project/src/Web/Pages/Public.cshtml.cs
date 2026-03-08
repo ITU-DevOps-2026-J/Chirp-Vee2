@@ -3,6 +3,7 @@ using Core;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Prometheus;
 
 namespace Web.Pages;
 /// <summary>
@@ -12,6 +13,22 @@ namespace Web.Pages;
 public class PublicModel(ICheepService service) : PageModel
 {
     private readonly ICheepService _service = service;
+
+    private static readonly Counter CheepsPosted = Metrics.CreateCounter(
+        "chirp_cheeps_posted_total", 
+        "Total number of cheeps posted"
+    );
+    
+    private static readonly Counter CheepsLiked = Metrics.CreateCounter(
+        "chirp_cheeps_liked_total",
+        "Total number of likes on cheeps"
+    );
+    
+    private static readonly Counter FollowAction = Metrics.CreateCounter(
+        "chirp_follow_action_total",
+        "Total number of follow action"
+    );
+   
     public required List<CheepViewModel> Cheeps { get; set; }
 
     /// <summary>
@@ -38,6 +55,7 @@ public class PublicModel(ICheepService service) : PageModel
         if (cheepMessage.Length < 161)
         {
             await _service.CreateCheep(User.FindFirst(ClaimTypes.Email)?.Value!, cheepMessage);
+            CheepsPosted.Inc();
         }
 
         return RedirectToPage("");
@@ -53,7 +71,8 @@ public class PublicModel(ICheepService service) : PageModel
     public async Task<IActionResult> OnPostFollow([FromQuery] int page = 0)
     {
         await _service.UpdateFollower(User.FindFirst(ClaimTypes.Email)?.Value!, Email);
-
+        FollowAction.Inc();
+        
         return RedirectToPage("");
     } 
     [BindProperty]
@@ -68,6 +87,7 @@ public class PublicModel(ICheepService service) : PageModel
     public async Task<IActionResult> OnPostLike([FromQuery] int page = 0)
     {
         await _service.UpdateCheepLikes(CheepId, User.FindFirst(ClaimTypes.Email)?.Value!);
+        CheepsLiked.Inc();
 
         return RedirectToPage("");
     }

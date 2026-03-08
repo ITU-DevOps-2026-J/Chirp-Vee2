@@ -43,6 +43,26 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache,mode=max
 
+      - name: Build and push prometheus
+        uses: docker/build-push-action@v6
+        with:
+          context: Chirp-Project
+          file: Chirp-Project/monitoring/prometheus/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/prometheus:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/prometheus:webbuildcache,mode=max
+
+      - name: Build and push grafana
+        uses: docker/build-push-action@v6
+        with:
+          context: Chirp-Project
+          file: Chirp-Project/monitoring/grafana/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/grafana:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache,mode=max
+
       # - name: Test minitwit
       #   run: |
       #     docker build -t $DOCKER_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
