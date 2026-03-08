@@ -3,6 +3,7 @@ using Core;
 using Core.Interfaces;
 using Core.Model;
 using Infrastructure.Repositories;
+using Prometheus;
 
 namespace Infrastructure.Services;
 
@@ -13,6 +14,20 @@ public class CheepService : ICheepService
 {
     private readonly CheepRepository _cheepRepository;
     private readonly AuthorRepository _authorRepository;
+    private static readonly Counter CheepsPosted = Metrics.CreateCounter(
+        "chirp_cheeps_posted_total", 
+        "Total number of cheeps posted"
+    );
+    
+    private static readonly Counter CheepsLiked = Metrics.CreateCounter(
+        "chirp_cheeps_liked_total",
+        "Total number of likes on cheeps"
+    );
+    
+    private static readonly Counter FollowAction = Metrics.CreateCounter(
+        "chirp_follow_action_total",
+        "Total number of follow action"
+    );
 
     public CheepService(ChatDbContext dbContext)
     {
@@ -103,6 +118,7 @@ public class CheepService : ICheepService
         if (author.Count() == 1)
         {
             await _cheepRepository.CreateCheep(author[0], msg);
+            CheepsPosted.Inc();
         } 
     }
 
@@ -203,6 +219,7 @@ public class CheepService : ICheepService
             else
             {
                 _authorRepository.AddFollowerId(author, followerId);
+                FollowAction.Inc();
             }
         }
     }
@@ -331,6 +348,8 @@ public class CheepService : ICheepService
             
             _cheepRepository.AddlikedId(cheep, author.AuthorId);
             _authorRepository.AddLikeId(author, cheepId);
+            CheepsLiked.Inc();
+
         }
     }
 
