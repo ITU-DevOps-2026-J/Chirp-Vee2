@@ -1,46 +1,46 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
-Vagrant.configure("2") do |config|
-  config.vm.box = 'digital_ocean'
-  config.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
-  config.ssh.private_key_path = '~/.ssh/id_rsa'
-  config.vm.synced_folder ".", "/vagrant", type: "rsync"
-
-  config.vm.define "itu_minitwit", primary: true do |server|
-    server.vm.provider :digital_ocean do |provider|
-      provider.ssh_key_name = ENV["SSH_KEY_NAME"]
-      provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
-      provider.image = 'ubuntu-22-04-x64'
-      provider.region = 'fra1'
-      provider.size = 's-1vcpu-1gb'
-      provider.privatenetworking = true
-    end
-
-    server.vm.hostname = "itu-minitwit"
-
-    server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: <<-SHELL
-      # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
-      sudo fuser -vk -TERM /var/lib/apt/lists/lock
-      sudo apt-get update
-      
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
-      if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
-        echo ". $HOME/.bashrc" >> $HOME/.bash_profile
-      fi
-      
-      source $HOME/.bash_profile
-
-      cd ../vagrant
-      chmod +x deploy.sh
-      chmod +x docker-cli.sh
-      ./docker-cli.sh
-      ./deploy.sh
-
-      # docker build -t ${DOCKER_USERNAME}/itu-minitwit .
-      # docker compose up -d
-    SHELL
-  end
-end
+ 
+ Vagrant.configure("2") do |config|
+   config.vm.box = "bento/ubuntu-22.04"
+ 
+   config.vm.network "private_network", type: "dhcp"
+ 
+   config.vm.provision "file", source: "./", destination: "./"
+ 
+   config.vm.define "dbserver", primary: false do |dbserver|
+     dbserver.vm.network "forwarded_port", guest: 5432, host: 1234
+     dbserver.vm.provider "virtualbox" do |vb|
+       vb.memory = "1024"
+     end
+     dbserver.vm.hostname = "dbserver"
+     dbserver.vm.provision "shell", privileged: true, inline: <<-SHELL
+       cd "Chirp-Project"
+       ./install-postgresql.sh
+     SHELL
+   end
+     
+   config.vm.define "itu-minitwit", primary: true do |server|
+     server.vm.network "forwarded_port", guest: 8080, host: 8080
+     server.vm.network "forwarded_port", guest: 3000, host: 3000
+     server.vm.network "forwarded_port", guest: 9090, host: 9090
+     server.vm.provider "virtualbox" do |vb|
+       vb.memory = "1024"
+     end
+     server.vm.hostname = "itu-minitwit"
+     server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+     server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+     server.vm.provision "shell", privileged: true, inline: <<-SHELL
+     # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
+       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+       fi
+          
+       source $HOME/.bash_profile
+       
+       cd "Chirp-Project"
+       ./docker-cli.sh
+       ./deploy.sh
+     SHELL
+   end
+ end
