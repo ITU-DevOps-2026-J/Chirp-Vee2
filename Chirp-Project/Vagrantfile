@@ -16,7 +16,10 @@
      dbserver.vm.hostname = "dbserver"
      dbserver.vm.provision "shell", privileged: true, inline: <<-SHELL
        cd "Chirp-Project"
-       ./install-postgresql.sh
+       ./docker-cli.sh
+       
+       cd database
+       docker compose up --build -d
      SHELL
    end
      
