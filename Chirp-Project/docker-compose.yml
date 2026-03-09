@@ -6,7 +6,8 @@ networks:
 services:
   app:
     environment:
-      - ConnectionStrings__DefaultConnection=Host=dbserver;Port=5432;Database=minitwit;Username=postgres;Password=postgres
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
     image: ${DOCKER_USERNAME}/itu-minitwit
     ports:
       - "8080:8080"

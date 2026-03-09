@@ -27,7 +27,7 @@ public class Program
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
         
-            context.Database.EnsureCreated();
+            //context.Database.EnsureCreated();
             context.Database.Migrate();
             //DbInitializer.SeedDatabase(context);
         }
