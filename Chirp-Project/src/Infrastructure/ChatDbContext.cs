@@ -48,5 +48,24 @@ public class ChatDbContext : IdentityDbContext<ApplicationUser>
             .HasColumnType("jsonb")
             .Metadata.SetValueComparer(listComparer);
         
+        modelBuilder.Entity<Cheep>()
+            .Property(c => c.PeopleLikes)
+            .HasColumnType("jsonb")
+            .Metadata.SetValueComparer(listComparer);
+        
+        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+            v => v.ToUniversalTime(),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetValueConverter(dateTimeConverter);
+                }
+            }
+        }
     }
 }

@@ -32,7 +32,15 @@ namespace Infrastructure.Migrations
                   END;
         ");
 
-           
+            migrationBuilder.Sql(@"
+    ALTER TABLE ""Cheeps""
+    ALTER COLUMN ""PeopleLikes"" TYPE jsonb
+    USING CASE
+            WHEN ""PeopleLikes"" IS NULL OR ""PeopleLikes"" = '{}' THEN '[]'::jsonb
+            ELSE ""PeopleLikes""::jsonb
+          END;
+");
+
         }
 
         /// <inheritdoc />
@@ -50,6 +58,13 @@ namespace Infrastructure.Migrations
             ALTER COLUMN ""CheepLikes"" TYPE text
             USING ""CheepLikes""::text;
         ");
+            
+            migrationBuilder.Sql(@"
+    ALTER TABLE ""Cheeps""
+    ALTER COLUMN ""PeopleLikes"" TYPE text
+    USING ""PeopleLikes""::text;
+");
+
         }
     }
 }
