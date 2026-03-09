@@ -15,9 +15,13 @@
      end
      dbserver.vm.hostname = "dbserver"
      dbserver.vm.provision "shell", privileged: true, inline: <<-SHELL
-       cd "Chirp-Project"
-       ./install-postgresql.sh
-     SHELL
+      cd /home/vagrant/Chirp-Project
+      # Ensure scripts have correct permissions
+      chmod +x install-postgresql.sh
+      # Fix potential Windows line endings
+      sed -i 's/\\r$//' install-postgresql.sh
+      ./install-postgresql.sh
+    SHELL
    end
      
    config.vm.define "itu-minitwit", primary: true do |server|
@@ -30,17 +34,18 @@
      server.vm.hostname = "itu-minitwit"
      server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
      server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-     server.vm.provision "shell", privileged: true, inline: <<-SHELL
-     # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
-       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
-         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
-       fi
-          
-       source $HOME/.bash_profile
-       
-       cd "Chirp-Project"
-       ./docker-cli.sh
-       ./deploy.sh
-     SHELL
+     server.vm.provision "shell", privileged: true, inline: <<-<<-SHELL
+      # Fix line endings for scripts
+      cd /home/vagrant/Chirp-Project
+      chmod +x docker-cli.sh deploy.sh
+      sed -i 's/\\r$//' docker-cli.sh deploy.sh
+
+      # Source bash profile
+      source /home/vagrant/.bash_profile
+
+      # Run Docker installation and deployment
+      ./docker-cli.sh
+      ./deploy.sh
+    SHELL
    end
  end

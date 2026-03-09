@@ -1,4 +1,5 @@
 using Core.Interfaces;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -26,16 +27,8 @@ public class Program
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
         
-            try
-            {
-                if (context.Database.IsSqlite())
-                {
-                    context.Database.OpenConnection();
-                }
-            }
-            catch (InvalidOperationException) { }
-        
             context.Database.EnsureCreated();
+            context.Database.Migrate();
             //DbInitializer.SeedDatabase(context);
         }
 
@@ -138,6 +131,8 @@ public class Program
         builder.Services.AddSession();
         builder.Services.AddDistributedMemoryCache();
 
+
+
         // Configure database based on environment
         if (builder.Environment.IsEnvironment("Testing"))
         {
@@ -148,7 +143,10 @@ public class Program
         {
             string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ChatDbContext>(options =>
-                options.UseSqlite(connectionString));
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                }));
         }
 
         // CRITICAL FIX: Use AddIdentity instead of AddDefaultIdentity
