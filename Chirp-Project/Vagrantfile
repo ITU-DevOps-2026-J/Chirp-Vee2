@@ -9,7 +9,8 @@
    config.vm.provision "file", source: "./", destination: "./"
  
    config.vm.define "dbserver", primary: false do |dbserver|
-     dbserver.vm.network "forwarded_port", guest: 5432, host: 1234
+     dbserver.vm.network "private_network", ip: "192.168.56.10"
+     dbserver.vm.network "forwarded_port", guest: 5432, host: 5432
      dbserver.vm.provider "virtualbox" do |vb|
        vb.memory = "1024"
      end
@@ -24,6 +25,7 @@
    end
      
    config.vm.define "itu-minitwit", primary: true do |server|
+     server.vm.network "private_network", ip: "192.168.56.11"
      server.vm.network "forwarded_port", guest: 8080, host: 8080
      server.vm.network "forwarded_port", guest: 3000, host: 3000
      server.vm.network "forwarded_port", guest: 9090, host: 9090
@@ -40,6 +42,8 @@
        fi
           
        source $HOME/.bash_profile
+       
+       echo "192.168.56.10 dbserver" >> /etc/hosts
        
        cd "Chirp-Project"
        ./docker-cli.sh
