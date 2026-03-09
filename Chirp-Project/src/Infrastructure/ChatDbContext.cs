@@ -1,6 +1,9 @@
 using Core.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure;
 
@@ -26,9 +29,24 @@ public class ChatDbContext : IdentityDbContext<ApplicationUser>
         
     }
     
-    /*
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
-    }*/
+        base.OnModelCreating(modelBuilder);
+
+        var listComparer = new ValueComparer<List<int>>(
+            (a, b) => (a ?? new List<int>()).SequenceEqual(b ?? new List<int>()),
+            v => (v ?? new List<int>()).Aggregate(0, (hash, item) => HashCode.Combine(hash, item)),
+            v => v == null ? new List<int>() : v.ToList());
+
+        modelBuilder.Entity<Author>()
+            .Property(a => a.Follows)
+            .HasColumnType("jsonb")
+            .Metadata.SetValueComparer(listComparer);
+
+        modelBuilder.Entity<Author>()
+            .Property(a => a.CheepLikes)
+            .HasColumnType("jsonb")
+            .Metadata.SetValueComparer(listComparer);
+        
+    }
 }

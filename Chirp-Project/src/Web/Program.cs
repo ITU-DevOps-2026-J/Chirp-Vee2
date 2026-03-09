@@ -142,11 +142,12 @@ public class Program
         else
         {
             string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+            dataSourceBuilder.EnableDynamicJson();
+            var dataSource = dataSourceBuilder.Build();
+
             builder.Services.AddDbContext<ChatDbContext>(options =>
-                options.UseNpgsql(connectionString, npgsqlOptions =>
-                {
-                    npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-                }));
+                options.UseNpgsql(dataSource));
         }
 
         // CRITICAL FIX: Use AddIdentity instead of AddDefaultIdentity
