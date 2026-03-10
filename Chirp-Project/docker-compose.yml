@@ -6,10 +6,9 @@ networks:
 services:
   app:
     environment:
-      - ConnectionStrings__DefaultConnection=Data Source=/App/data/app.db
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
     image: ${DOCKER_USERNAME}/itu-minitwit
-    volumes:
-      - db-data:/App/data
     ports:
       - "8080:8080"
     networks:

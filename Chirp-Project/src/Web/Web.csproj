@@ -9,8 +9,6 @@
 
     <ItemGroup>
         <PackageReference Include="AspNet.Security.OAuth.GitHub" Version="8.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore" Version="2.3.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.22" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.22" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.22" />
@@ -22,11 +20,12 @@
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="8.0.22" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.22" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
         <PackageReference Include="prometheus-net" Version="8.2.1" />
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
     </ItemGroup>

@@ -39,6 +39,7 @@ jobs:
           context: Chirp-Project
           file: Chirp-Project/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache,mode=max
@@ -49,6 +50,7 @@ jobs:
           context: Chirp-Project
           file: Chirp-Project/monitoring/prometheus/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/prometheus:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/prometheus:webbuildcache,mode=max
@@ -59,6 +61,7 @@ jobs:
           context: Chirp-Project
           file: Chirp-Project/monitoring/grafana/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKER_USERNAME }}/grafana:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache,mode=max

@@ -19,8 +19,8 @@ public class LatestsRepository : ILatestsRepository
         var newLatest = new Latest()
         {
             LatestCommandId = latestId.Value,
-            UpdatedDate = DateTime.Now,
-            CreatedDate = DateTime.Now
+            UpdatedDate = DateTime.UtcNow,
+            CreatedDate = DateTime.UtcNow
         };
 
         _dbContext.Latests.Add(newLatest);
