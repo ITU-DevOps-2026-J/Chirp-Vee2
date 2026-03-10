@@ -21,15 +21,16 @@ Vagrant.configure("2") do |config|
  
     dbserver.vm.hostname = "dbserver"
     
-    server.trigger.after :up do |trigger|
+    dbserver.trigger.after :up do |trigger|
       trigger.info =  "Writing dbserver's IP to file..."
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($ip_file, remote_ip)
+        puts "dbserver IP is: #{remote_ip}"
       end
     end
    
-   server.vm.provision "shell", inline: <<-SHELL
+   dbserver.vm.provision "shell", inline: <<-SHELL
          # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
          sudo fuser -vk -TERM /var/lib/apt/lists/lock
          sudo apt-get update
@@ -59,7 +60,7 @@ Vagrant.configure("2") do |config|
       trigger.info =  "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
         ip_file = "db_ip.txt"
-        while !File.file?($ip_file) do
+        while File.zero?(ip_file) do
           sleep(1)
         end
         db_ip = File.read($ip_file).strip()
@@ -67,20 +68,15 @@ Vagrant.configure("2") do |config|
       end
     end
     
-    server.trigger.before :destroy do |trigger|
-      trigger.info =  "Cleaning dbserver's IP file."
-      trigger.ruby do |env,machine|
-        File.delete($ip_file) if File.exist? $ip_file
-      end
-    end
-
-    server.vm.provision "shell", inline: 'echo "export DB_SERVER_IP=' + "'" + File.read($ip_file).strip() + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: <<-SHELL
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
+      
+      export DB_SERVER_IP=$(cat ../vagrant/db_ip.txt)
+      echo $DB_SERVER_IP
       
       # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
