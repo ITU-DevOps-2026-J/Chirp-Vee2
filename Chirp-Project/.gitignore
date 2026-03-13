@@ -1,2 +1,4 @@
 .idea
 .vagrant
+.sonarqube
+database/.DS_Store
