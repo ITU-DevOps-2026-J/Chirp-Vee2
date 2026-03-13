@@ -33,7 +33,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io"
 
       - name: Build
-        run: dotnet build ./Chirp-Project/Chirp.sln --configuration $(CONFIG) --no-incremental
+        run: dotnet build ./Chirp-Project/Chirp.sln --no-incremental
 
       - name: Sonar End
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
