@@ -17,7 +17,7 @@ jobs:
       - name: Run Hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: ./Chirp-Project/Dockerfile
 
   shellcheck:
     name: Lint Shell Scripts
@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@v2.0.0
+        uses: ludeeus/action-shellcheck@master
         with:
           scandir: "."
           severity: warning 
