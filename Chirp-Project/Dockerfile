@@ -6,11 +6,11 @@ WORKDIR /App
 COPY ./src ./
 
 # Create volume directory
-RUN mkdir -p /App/data
+RUN mkdir -p /App/data \
 # Restore as distinct layers
-RUN dotnet restore Web/Web.csproj
+    && dotnet restore Web/Web.csproj \
 # Build and publish a release
-RUN dotnet publish Web/Web.csproj -c Release -o /App/out
+    && dotnet publish Web/Web.csproj -c Release -o /App/out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
