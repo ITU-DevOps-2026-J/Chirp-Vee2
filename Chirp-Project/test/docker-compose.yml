@@ -1,0 +1,13 @@
+services:
+ web:
+  image: niye/test
+  build:
+   context: .
+   dockerfile: Dockerfile
+  ports:
+   - "8080:8080"
+  volumes:
+   - chirp-data:/App/data
+
+volumes:
+ chirp-data:
