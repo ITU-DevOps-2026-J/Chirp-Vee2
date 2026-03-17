@@ -4,7 +4,7 @@ WORKDIR /App
 
 ENV CI=true
 
-COPY . .
+COPY Chirp-Project .
 
 RUN dotnet restore
 RUN dotnet build -c Debug --no-restore
