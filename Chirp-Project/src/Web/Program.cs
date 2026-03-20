@@ -28,11 +28,7 @@ public class Program
             var context = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
         
             //context.Database.EnsureCreated();
-            if (context.Database.IsRelational())
-            {
-                context.Database.Migrate();
-            }
-            
+            context.Database.Migrate();
             //DbInitializer.SeedDatabase(context);
         }
 
