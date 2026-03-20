@@ -26,7 +26,7 @@ public class IntegrationTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetAll()
     {
         HttpClient client = _factory.CreateClient();
-        var response = await client.GetAsync("/");
+        var response = await client.GetAsync("");
         response.EnsureSuccessStatusCode();
         var readResponse = await response.Content.ReadAsStringAsync();
         
