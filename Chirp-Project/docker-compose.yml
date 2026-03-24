@@ -5,6 +5,7 @@ networks:
 
 services:
   app:
+    container_name: minitwit
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
@@ -22,9 +23,9 @@ services:
     restart: unless-stopped
 
   prometheus:
-    build: 
-      dockerfile: ./Dockerfile
-      context: ./monitoring/prometheus
+    build:
+      context: .
+      dockerfile: ./monitoring/prometheus/Dockerfile
     image: ${DOCKER_USERNAME}/prometheus
     container_name: prometheus
     command:
@@ -33,11 +34,13 @@ services:
       - "9090:9090"
     networks:
       - itu-minitwit-network
+    volumes:
+      - prometheus-data:/prometheus
 
   grafana:
-    build: 
-      dockerfile: ./Dockerfile
-      context: ./monitoring/grafana
+    build:
+      context: .
+      dockerfile: ./monitoring/grafana/Dockerfile
     image: ${DOCKER_USERNAME}/grafana
     container_name: grafana
     ports:
@@ -47,7 +50,45 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
 
+  loki:
+    image: grafana/loki:3.6.7
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - itu-minitwit-network
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+      - alloy-data:/var/lib/alloy/data
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+    networks:
+      - itu-minitwit-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
 volumes:
-  grafana-storage: {}
+  loki-data:
+    name: minitwit-loki-data
+  alloy-data:
+    name: minitwit-alloy-data
+  grafana-storage:
+    name: minitwit-grafana-storage
+  prometheus-data:
+    name: minitwit-prometheus-data
   db-data:
     name: minitwit-data
