@@ -17,7 +17,6 @@ public class TestServerFixture : IAsyncDisposable
     private static WebApplication? _app;
     private static SqliteConnection? _keepAliveConnection;
     public string ServerAddress = "http://localhost:5273";
-    public string ContentRoot = Directory.GetCurrentDirectory(); // default
 
     public async Task StartAsync()
     {
@@ -43,7 +42,6 @@ public class TestServerFixture : IAsyncDisposable
             Console.WriteLine("Opened persistent in-memory database connection");
 
             _app = Program.BuildWebApplication(environment: "Testing");
-            _app.UseDeveloperExceptionPage();
             // Initialize the in-memory database
             using (var scope = _app.Services.CreateScope())
             {
@@ -51,8 +49,6 @@ public class TestServerFixture : IAsyncDisposable
                 context.Database.EnsureCreated();
                 DbInitializer.SeedDatabase(context);
                 Console.WriteLine("Database initialized and seeded");
-                _app.Urls.Clear();
-                _app.Urls.Add(ServerAddress.Replace("localhost", "0.0.0.0"));
             }
 
             Console.WriteLine("Routes:");

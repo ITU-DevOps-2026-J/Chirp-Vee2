@@ -36,7 +36,7 @@ jobs:
       - name: Test minitwit
         run: |
            docker build -t $DOCKER_USERNAME/minitwittestimage -f Chirp-Project/test/Dockerfile .
-           docker run $DOCKER_USERNAME/minitwittestimage
+           docker compose -f Chirp-Project/test/docker-compose.yml up
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 

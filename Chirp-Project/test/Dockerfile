@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0
 
-RUN useradd -m appuser
+#RUN useradd -m appuser
 
 WORKDIR /App
 ENV CI=true
@@ -14,9 +14,9 @@ RUN dotnet build -c Debug --no-restore
 RUN pwsh /App/test/End2EndTests/bin/Debug/net8.0/playwright.ps1 install-deps
 
 # fix permissions before switching user
-RUN chown -R appuser:appuser /App
+# RUN chown -R appuser:appuser /App
 
-USER appuser
+# USER appuser
 
 # install browsers as appuser
 RUN pwsh /App/test/End2EndTests/bin/Debug/net8.0/playwright.ps1 install
