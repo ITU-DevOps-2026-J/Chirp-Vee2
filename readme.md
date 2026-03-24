@@ -30,3 +30,7 @@ vagrant up
 ```
 
 Then head to http://localhost:8080 to see the application running.
+
+Remember that each time you update any docker stuff, remember to write the following to make sure it can run.
+
+docker pull nickychengde/itu-minitwit
