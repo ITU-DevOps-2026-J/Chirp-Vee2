@@ -1,6 +1,6 @@
 services:
  web:
-  image: niye/test
+  image: ${DOCKER_USERNAME}/minitwittestimage
   build:
    context: .
    dockerfile: Dockerfile
