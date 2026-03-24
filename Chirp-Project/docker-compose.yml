@@ -20,9 +20,9 @@ services:
     restart: unless-stopped
 
   prometheus:
-    build: 
-      dockerfile: ./Dockerfile
-      context: ./monitoring/prometheus
+    build:
+      context: .
+      dockerfile: ./monitoring/prometheus/Dockerfile
     image: ${DOCKER_USERNAME}/prometheus
     container_name: prometheus
     command:
@@ -33,9 +33,9 @@ services:
       - itu-minitwit-network
 
   grafana:
-    build: 
-      dockerfile: ./Dockerfile
-      context: ./monitoring/grafana
+    build:
+      context: .
+      dockerfile: ./monitoring/grafana/Dockerfile
     image: ${DOCKER_USERNAME}/grafana
     container_name: grafana
     ports:
