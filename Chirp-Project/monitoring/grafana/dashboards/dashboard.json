@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -74,7 +74,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "fegat3x6evklcc"
+            "uid": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -96,7 +96,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -164,7 +164,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -245,5 +245,5 @@
   "timezone": "browser",
   "title": "Minitwit Example Dashboard",
   "uid": "fegau3n6gywaoa",
-  "version": 1
+  "version": 2
 }

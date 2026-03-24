@@ -31,6 +31,8 @@ services:
       - "9090:9090"
     networks:
       - itu-minitwit-network
+    volumes:
+      - prometheus-data:/prometheus
 
   grafana:
     build:
@@ -78,7 +80,12 @@ services:
 
 volumes:
   loki-data:
+    name: minitwit-loki-data
   alloy-data:
-  grafana-storage: {}
+    name: minitwit-alloy-data
+  grafana-storage:
+    name: minitwit-grafana-storage
+  prometheus-data:
+    name: minitwit-prometheus-data
   db-data:
     name: minitwit-data
