@@ -37,9 +37,4 @@
     <ItemGroup>
         <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="wwwroot/**" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="Pages/**" CopyToOutputDirectory="PreserveNewest" />
-    </ItemGroup>
 </Project>

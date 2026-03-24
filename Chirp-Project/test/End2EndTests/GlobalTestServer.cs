@@ -25,6 +25,9 @@ public class GlobalTestSetup
     {
         Console.WriteLine("=== GLOBAL SETUP: Starting test server ===");
         _fixture = new TestServerFixture();
+        _fixture.ServerAddress = "http://localhost:5273"; // Playwright will use this
+        _fixture.ContentRoot = Path.Combine(Directory.GetCurrentDirectory(), "src/Web"); // adjust if needed
+
         await _fixture.StartAsync();
         Console.WriteLine($"=== GLOBAL SETUP: Test server started at {ServerAddress} ===");
         
