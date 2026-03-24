@@ -8,6 +8,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
+    build:
+      dockerfile: ./Dockerfile
+      context: .
     image: ${DOCKER_USERNAME}/itu-minitwit
     ports:
       - "8080:8080"

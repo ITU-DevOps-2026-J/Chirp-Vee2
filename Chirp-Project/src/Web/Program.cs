@@ -6,6 +6,7 @@ using Infrastructure.Services;
 using Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.IdentityModel.Tokens;
 using Prometheus;
 
 namespace Web;
@@ -27,9 +28,10 @@ public class Program
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
         
-            //context.Database.EnsureCreated();
-            context.Database.Migrate();
-            //DbInitializer.SeedDatabase(context);
+            if (context.Database.IsRelational())
+            {        
+                context.Database.Migrate();
+            }
         }
 
         app.Run();
@@ -120,10 +122,20 @@ public class Program
             webProjectPath = foundDir?.FullName ?? baseDir;
         }
 
+        string env;
+        if (!args.IsNullOrEmpty())
+        {
+            env = args.Contains("--environment=Testing") ? "Testing" :
+                args.Contains("--environment=Development") ? "Development" :
+                args.Contains("--environment=Production") ? "Production" :
+                environment ?? Environments.Development;
+        }
+        else env = environment ?? Environments.Development;
+        
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
             Args = args ?? Array.Empty<string>(),
-            EnvironmentName = environment ?? Environments.Development,
+            EnvironmentName = env,
             ContentRootPath = webProjectPath,
             WebRootPath = Path.Combine(webProjectPath, "wwwroot")
         });
@@ -222,14 +234,11 @@ public class Program
         }
 
         // Configure the HTTP request pipeline.
-        if (!app.Environment.IsEnvironment("Testing"))
+        if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-                app.UseHsts();
-                app.UseHttpsRedirection();
-            }
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
+            app.UseHttpsRedirection();
         }
 
         if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))

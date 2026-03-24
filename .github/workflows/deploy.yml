@@ -33,6 +33,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Test minitwit
+        run: |
+           docker build -t $DOCKER_USERNAME/minitwittestimage -f Chirp-Project/test/Dockerfile .
+           docker run $DOCKER_USERNAME/minitwittestimage
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
       - name: Build and push itu-minitwit
         uses: docker/build-push-action@v6
         with:
@@ -65,14 +72,6 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/grafana:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/grafana:webbuildcache,mode=max
-
-      # - name: Test minitwit
-      #   run: |
-      #     docker build -t $DOCKER_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
-      #     yes 2>/dev/null | docker compose up -d
-      #     docker run --rm --network=itu-minitwit-network $DOCKER_USERNAME/minitwittestimage
-      #   env:
-      #     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
       - name: Configure SSH
         run: |

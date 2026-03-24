@@ -30,6 +30,6 @@ public class IntegrationTests : IClassFixture<CustomWebApplicationFactory>
         response.EnsureSuccessStatusCode();
         var readResponse = await response.Content.ReadAsStringAsync();
         
-        Assert.Contains("The train pulled up at his bereavement; but his eyes riveted upon that heart for ever; who ever conquered it?", readResponse);
+        Assert.Contains("Vee says i make propaganda", readResponse);
     }
 }
