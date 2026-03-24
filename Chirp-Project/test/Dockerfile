@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0
 WORKDIR /App
 ENV CI=true
 
-COPY Chirp-Project .
+COPY ./Chirp-Project .
 
 RUN dotnet restore
 RUN dotnet build -c Debug --no-restore
