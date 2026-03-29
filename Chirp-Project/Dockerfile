@@ -13,7 +13,7 @@ RUN mkdir -p /App/data \
     && dotnet publish Web/Web.csproj -c Release -o /App/out
 
 # Build runtime image
-FROM dhi.io/dotnet:10-sdk
+FROM dhi.io/aspnetcore:10
 WORKDIR /App
 COPY --from=build /App/out .
 ENTRYPOINT ["dotnet", "Web.dll"]
