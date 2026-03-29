@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 #RUN useradd -m appuser
 
@@ -11,7 +11,7 @@ RUN dotnet restore
 RUN dotnet build -c Debug --no-restore
 
 #  install system dependencies as root
-RUN pwsh /App/test/End2EndTests/bin/Debug/net8.0/playwright.ps1 install-deps
+RUN pwsh /App/test/End2EndTests/bin/Debug/net10.0/playwright.ps1 install-deps
 
 # fix permissions before switching user
 # RUN chown -R appuser:appuser /App
@@ -19,6 +19,6 @@ RUN pwsh /App/test/End2EndTests/bin/Debug/net8.0/playwright.ps1 install-deps
 # USER appuser
 
 # install browsers as appuser
-RUN pwsh /App/test/End2EndTests/bin/Debug/net8.0/playwright.ps1 install
+RUN pwsh /App/test/End2EndTests/bin/Debug/net10.0/playwright.ps1 install
 
 ENTRYPOINT ["dotnet", "test", "-c", "Debug", "--no-build"]
