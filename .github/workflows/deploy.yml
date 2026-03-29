@@ -8,6 +8,10 @@ on:
   # allow manual triggers for now too
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 # Remember to set the following secrets in your repository's settings:
 # https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
 # DOCKER_USERNAME
@@ -50,6 +54,19 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/itu-minitwit:webbuildcache,mode=max
+
+      - name: Docker Scout CVE analysis
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
+          summary: true
+          sarif-file: scout-itu-minitwit.sarif
+
+      - name: Upload Docker Scout SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scout-itu-minitwit.sarif
 
       - name: Build and push prometheus
         uses: docker/build-push-action@v6
