@@ -70,7 +70,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<List<int>>("PeopleLikes")
                         .IsRequired()
-                        .HasColumnType("integer[]");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Text")
                         .IsRequired()
