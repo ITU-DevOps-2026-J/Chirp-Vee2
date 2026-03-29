@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0
+FROM dhi.io/dotnet:10-sdk
 
 #RUN useradd -m appuser
 
