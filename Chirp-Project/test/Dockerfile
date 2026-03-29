@@ -1,14 +1,4 @@
-FROM dhi.io/dotnet:10-sdk
-
-RUN apt-get update && apt-get install -y curl ca-certificates gnupg \
-    && curl -sSL https://packages.microsoft.com/config/debian/12/prod.list \
-    -o /etc/apt/sources.list.d/microsoft-prod.list \
-    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
-    | gpg --dearmor \
-    | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null \
-    && apt-get update \
-    && apt-get install -y powershell \
-    && rm -rf /var/lib/apt/lists/*
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 #RUN useradd -m appuser
 
