@@ -1,5 +1,23 @@
 FROM dhi.io/dotnet:10-sdk
 
+# Install curl + dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    wget \
+    gnupg \
+    apt-transport-https \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Microsoft PowerShell repo + pwsh
+RUN wget -q https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y powershell \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm packages-microsoft-prod.deb
+
+
 #RUN useradd -m appuser
 
 WORKDIR /App
