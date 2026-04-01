@@ -20,7 +20,6 @@ public class CheepRepository : ICheepRepository
     {
        var cheep = new Cheep()
         {
-            CheepId = FindNewCheepId(),
             Text = msg,
             TimeStamp = DateTime.UtcNow,
             AuthorId = author.AuthorId,
@@ -31,11 +30,6 @@ public class CheepRepository : ICheepRepository
         await _dbContext.SaveChangesAsync();
     }
     
-    public int FindNewCheepId()
-    {
-        return _dbContext.Cheeps.Count() + 1;
-    }
-
     public async Task<List<Cheep>> ReadCheeps(int page = 0)
     {
         var query = (

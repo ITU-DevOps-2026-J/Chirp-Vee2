@@ -66,12 +66,15 @@ public class CheepRepositoryTests
             Cheeps = new List<Cheep>()
         };
 
-        //Values needs to be updated when merged with Vee and madelines code
+        // Create a cheep and verify it gets auto-assigned an ID
         Assert.Equal(3, _authorRepository.FindNewAuthorId().Result);
-        Assert.Equal(5, _cheepRepository.FindNewCheepId());
         await _cheepRepository.CreateCheep(authorObj, msg);
         Assert.Equal(4, _authorRepository.FindNewAuthorId().Result);
-        Assert.Equal(6, _cheepRepository.FindNewCheepId());
+        
+        // Verify the cheep was created
+        var createdCheep = await _cheepRepository.GetCheepFromId(5);
+        Assert.NotNull(createdCheep);
+        Assert.Equal(msg, createdCheep.Text);
     }
     
     [Fact]
