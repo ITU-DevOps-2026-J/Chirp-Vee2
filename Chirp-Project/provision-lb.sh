@@ -21,6 +21,7 @@ apt-get install -y nginx keepalived
 # Configure Nginx as a load balancer
 cat > /etc/nginx/sites-available/default <<'EOF'
 upstream backend_servers {
+    ip_hash;
     server 104.248.28.105:8080;
     server 167.172.97.87:8080;
 }
