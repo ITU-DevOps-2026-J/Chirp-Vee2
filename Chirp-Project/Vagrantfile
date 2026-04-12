@@ -38,6 +38,7 @@ Vagrant.configure("2") do |config|
          cd ../vagrant
          chmod +x docker-cli.sh
          ./docker-cli.sh
+         ./dbserver-firewall.sh
    
          cd database
          docker compose up --build -d
@@ -103,8 +104,8 @@ Vagrant.configure("2") do |config|
       chmod +x deploy.sh
       chmod +x docker-cli.sh
       ./docker-cli.sh
+      ./minitwit-firewall.sh
       ./deploy.sh
-      #firewall setup
     SHELL
   end
 
@@ -167,8 +168,8 @@ Vagrant.configure("2") do |config|
       chmod +x deploy.sh
       chmod +x docker-cli.sh
       ./docker-cli.sh
+      ./minitwit-firewall.sh
       ./deploy.sh
-      #firewall setup
     SHELL
   end
   
