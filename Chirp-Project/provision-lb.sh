@@ -56,46 +56,27 @@ respawn
 exec /usr/local/sbin/keepalived --dont-fork
 EOF
 
+cd /usr/local/bin
+sudo curl -LO http://do.co/assign-ip
+
 cat > /etc/keepalived/master.sh <<EOF
 #!/bin/bash
-set -e
-
-# Keepalived runs scripts in a minimal environment. Load token if it is not already present.
-if [ -z "\${DO_TOKEN:-}" ] && [ -f /root/.bash_profile ]; then
-    # shellcheck disable=SC1091
-    source ~/.bash_profile
-fi
-
-LOG_FILE="/var/log/keepalived-master.log"
 IP='144.126.246.132'
 ID=$(curl -s http://169.254.169.254/metadata/v1/id)
 HAS_RESERVED_IP=$(curl -s http://169.254.169.254/metadata/v1/reserved_ip/ipv4/active)
 
-if [ -z "\${DO_TOKEN:-}" ]; then
-    echo "$(date -Iseconds) DO_TOKEN is not set; cannot assign reserved IP" >> "$LOG_FILE"
-    exit 1
-fi
-
-if [ "$HAS_RESERVED_IP" = "false" ]; then
+if [ $HAS_RESERVED_IP = "false" ]; then
     n=0
     while [ $n -lt 10 ]
     do
-        RESPONSE=$(curl -sS -X POST \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer \${DO_TOKEN}" \
-          -d "{\"type\":\"assign\",\"droplet_id\":\"$ID\"}" \
-          "https://api.digitalocean.com/v2/floating_ips/$IP/actions" || true)
-
-        echo "$(date -Iseconds) assign attempt $((n+1)): $RESPONSE" >> "$LOG_FILE"
-
-        echo "$RESPONSE" | grep -q '"action"' && break
+        python /usr/local/bin/assign-ip $IP $ID && break
         n=$((n+1))
         sleep 3
     done
 fi
 EOF
 
-chmod +x /etc/keepalived/master.sh
+sudo chmod +x /etc/keepalived/master.sh
 
 # Configure Keepalived
 cat > /etc/keepalived/keepalived.conf <<EOF
