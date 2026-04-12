@@ -105,7 +105,6 @@ Vagrant.configure("2") do |config|
       chmod +x docker-cli.sh
       ./docker-cli.sh
       ./minitwit-firewall.sh
-      ./tls.sh
       ./deploy.sh
     SHELL
   end
@@ -170,7 +169,6 @@ Vagrant.configure("2") do |config|
       chmod +x docker-cli.sh
       ./docker-cli.sh
       ./minitwit-firewall.sh
-      ./tls.sh
       ./deploy.sh
     SHELL
   end
@@ -202,6 +200,7 @@ Vagrant.configure("2") do |config|
       cd ../vagrant
       ./minitwit-firewall.sh
       ./provision-lb.sh itu-minitwit-load-balancer MASTER 255 "10.114.0.8" "10.114.0.9"
+      ./tls.sh
     SHELL
   end
 
@@ -232,7 +231,7 @@ Vagrant.configure("2") do |config|
       cd ../vagrant
       ./minitwit-firewall.sh
       ./provision-lb.sh itu-minitwit-load-balancer2 BACKUP 200 "10.114.0.9" "10.114.0.8"
-
+      ./tls.sh
     SHELL
   end
 
