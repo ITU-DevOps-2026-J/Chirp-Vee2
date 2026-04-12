@@ -8,7 +8,11 @@ STATE=$2
 PRIORITY=$3
 SRC_IP=$4
 PEER_IP=$5
-VIRTUAL_IP="144.126.246.132"
+VIRTUAL_IP="157.245.27.199"
+BACKEND_1="104.248.28.105"
+BACKEND_2="167.172.97.87"
+# Ports exposed on the reserved IP and forwarded to the same backend port.
+FORWARDED_PORTS="8080 3000 9090 3100"
 
 echo "Provisioning load balancer: $HOSTNAME as $STATE with priority $PRIORITY"
 
@@ -16,14 +20,14 @@ echo "Provisioning load balancer: $HOSTNAME as $STATE with priority $PRIORITY"
 apt-get update
 
 # Install Nginx and Keepalived
-apt-get install -y nginx keepalived
+apt-get install -y nginx keepalived libnginx-mod-stream
 
 # Configure Nginx as a load balancer
 cat > /etc/nginx/sites-available/default <<'EOF'
 upstream backend_servers {
     ip_hash;
-    server 104.248.28.105:8080;
-    server 167.172.97.87:8080;
+    server 104.248.28.105;
+    server 167.172.97.87;
 }
 
 server {
@@ -39,6 +43,34 @@ server {
     }
 }
 EOF
+
+# Configure TCP port forwarding on the reserved IP using the stream module.
+cat > /etc/nginx/stream.conf <<EOF
+stream {
+EOF
+
+for port in $FORWARDED_PORTS; do
+cat >> /etc/nginx/stream.conf <<EOF
+    upstream backend_servers_${port} {
+        server ${BACKEND_1}:${port};
+        server ${BACKEND_2}:${port};
+    }
+
+    server {
+        listen ${port};
+        proxy_pass backend_servers_${port};
+    }
+EOF
+done
+
+cat >> /etc/nginx/stream.conf <<EOF
+}
+EOF
+
+# Ensure stream config is loaded at top-level nginx context.
+if ! grep -q '^include /etc/nginx/stream.conf;$' /etc/nginx/nginx.conf; then
+    sed -i '/^http {/i include /etc/nginx/stream.conf;' /etc/nginx/nginx.conf
+fi
 
 # Test and reload Nginx
 nginx -t
@@ -71,7 +103,7 @@ fi
 LOG_FILE=/var/log/keepalived-master.log
 echo "[$(date -Iseconds)] notify_master invoked" >> "$LOG_FILE"
 
-IP='144.126.246.132'
+IP='157.245.27.199'
 ID=$(curl -s http://169.254.169.254/metadata/v1/id)
 HAS_RESERVED_IP=$(curl -s http://169.254.169.254/metadata/v1/reserved_ip/ipv4/active)
 
