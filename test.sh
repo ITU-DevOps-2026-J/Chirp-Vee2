@@ -1,0 +1,7 @@
+HOSTNAME=$1
+STATE=$2
+PRIORITY=$3
+
+echo $HOSTNAME
+echo $STATE
+echo $PRIORITY
