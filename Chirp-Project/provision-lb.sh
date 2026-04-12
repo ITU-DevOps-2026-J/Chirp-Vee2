@@ -69,7 +69,7 @@ if [ $HAS_RESERVED_IP = "false" ]; then
     n=0
     while [ $n -lt 10 ]
     do
-        python /usr/local/bin/assign-ip $IP $ID && break
+        python3 /usr/local/bin/assign-ip $IP $ID && break
         n=$((n+1))
         sleep 3
     done
