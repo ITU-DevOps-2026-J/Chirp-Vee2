@@ -11,6 +11,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 
 # Add the repository to Apt sources:
 if ! grep -qF "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu   jammy stable" /etc/apt/sources.list.d/docker.list; then
+  # shellcheck disable=SC1091
   echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
     $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
@@ -25,6 +26,6 @@ sudo apt-get install -y \
   docker-buildx-plugin \
   docker-compose-plugin
 
-sudo usermod -aG docker $USER
+sudo usermod -aG docker "$USER"
 
 sudo systemctl restart docker

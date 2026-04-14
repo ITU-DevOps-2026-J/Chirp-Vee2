@@ -88,8 +88,8 @@ respawn
 exec /usr/local/sbin/keepalived --dont-fork
 EOF
 
-cd /usr/local/bin
-sudo curl -LO http://do.co/assign-ip
+cd /usr/local/bin || exit 1
+sudo curl -fLSo assign-ip https://do.co/assign-ip
 
 cat > /etc/keepalived/master.sh <<'EOF'
 #!/bin/bash
@@ -182,4 +182,4 @@ systemctl enable keepalived
 
 echo "Load balancer $HOSTNAME provisioned successfully"
 echo "Virtual IP: $VIRTUAL_IP"
-echo "Navigate your browser to: http://$VIRTUAL_IP"
+echo "Navigate your browser to: $VIRTUAL_IP"
