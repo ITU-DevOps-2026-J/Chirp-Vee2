@@ -7,12 +7,33 @@ using Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Prometheus;
+using System.Diagnostics;
+using Web.Monitoring;
 
 namespace Web;
 
 public class Program
 {
+    private static readonly Histogram RequestDuration = Metrics.CreateHistogram(
+        "chirp_http_request_duration_seconds",
+        "HTTP request duration grouped by method, path and status code.",
+        new HistogramConfiguration
+        {
+            LabelNames = ["method", "path", "status_code"],
+            Buckets = Histogram.ExponentialBuckets(0.005, 2, 12)
+        });
+
+    private static readonly Histogram FrontPageDuration = Metrics.CreateHistogram(
+        "chirp_front_page_duration_seconds",
+        "Front page GET request duration in seconds.",
+        new HistogramConfiguration
+        {
+            LabelNames = ["status_code"],
+            Buckets = Histogram.ExponentialBuckets(0.005, 2, 12)
+        });
+
     //test
     /// <summary>
     /// Main Program to run
@@ -142,14 +163,19 @@ public class Program
 
         builder.Services.AddSession();
         builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<DbCommandInterceptor, DbCommandMetricsInterceptor>();
+        builder.Services.AddHostedService<SystemMetricsCollector>();
 
 
 
         // Configure database based on environment
         if (builder.Environment.IsEnvironment("Testing"))
         {
-            builder.Services.AddDbContext<ChatDbContext>(options =>
-                options.UseSqlite("DataSource=TestDb;Mode=Memory;Cache=Shared"));
+            builder.Services.AddDbContext<ChatDbContext>((serviceProvider, options) =>
+                options
+                    .UseSqlite("DataSource=TestDb;Mode=Memory;Cache=Shared")
+                    .AddInterceptors(serviceProvider.GetRequiredService<DbCommandInterceptor>()));
         }
         else
         {
@@ -158,8 +184,10 @@ public class Program
             dataSourceBuilder.EnableDynamicJson();
             var dataSource = dataSourceBuilder.Build();
 
-            builder.Services.AddDbContext<ChatDbContext>(options =>
-                options.UseNpgsql(dataSource));
+            builder.Services.AddDbContext<ChatDbContext>((serviceProvider, options) =>
+                options
+                    .UseNpgsql(dataSource)
+                    .AddInterceptors(serviceProvider.GetRequiredService<DbCommandInterceptor>()));
         }
 
         // CRITICAL FIX: Use AddIdentity instead of AddDefaultIdentity
@@ -249,6 +277,36 @@ public class Program
         app.UseStaticFiles();
 
         app.UseRouting();
+        app.Use(async (context, next) =>
+        {
+            var requestPath = context.Request.Path.HasValue
+                ? context.Request.Path.Value!
+                : "unknown";
+
+            RequestMetricsContext.Path = requestPath;
+            var timer = Stopwatch.StartNew();
+
+            try
+            {
+                await next();
+            }
+            finally
+            {
+                timer.Stop();
+                var statusCode = context.Response.StatusCode.ToString();
+
+                RequestDuration
+                    .WithLabels(context.Request.Method, requestPath, statusCode)
+                    .Observe(timer.Elapsed.TotalSeconds);
+
+                if (context.Request.Method == HttpMethods.Get && requestPath == "/")
+                {
+                    FrontPageDuration.WithLabels(statusCode).Observe(timer.Elapsed.TotalSeconds);
+                }
+
+                RequestMetricsContext.Path = "unknown";
+            }
+        });
         app.UseHttpMetrics();
         app.MapControllers();
         app.MapMetrics("/monitoring/metrics");
