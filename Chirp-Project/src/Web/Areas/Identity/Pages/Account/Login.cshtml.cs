@@ -110,6 +110,8 @@ namespace Web.Areas.Identity.Pages.Account
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var inputLogin = Input.NameInput;
+                var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                _logger.LogInformation("Login attempt for {LoginIdentifier} from {RemoteIp}", inputLogin, remoteIp);
                 var user = await _userManager.FindByNameAsync(inputLogin) ??
                            await _userManager.FindByEmailAsync(inputLogin);
 
@@ -119,24 +121,27 @@ namespace Web.Areas.Identity.Pages.Account
                         lockoutOnFailure: false);
                     if (result.Succeeded)
                     {
-                        _logger.LogInformation("User logged in.");
+                        _logger.LogInformation("Login outcome succeeded for {LoginIdentifier}", inputLogin);
                         return LocalRedirect(returnUrl);
                     }
 
                     if (result.RequiresTwoFactor)
                     {
+                        _logger.LogInformation("Login outcome requires_two_factor for {LoginIdentifier}", inputLogin);
                         return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, Input.RememberMe });
                     }
 
                     if (result.IsLockedOut)
                     {
-                        _logger.LogWarning("User account locked out.");
+                        _logger.LogWarning("Login outcome locked_out for {LoginIdentifier}", inputLogin);
                         return RedirectToPage("./Lockout");
                     }
 
+                    _logger.LogInformation("Login outcome invalid_password for {LoginIdentifier}", inputLogin);
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
                 }
+                _logger.LogInformation("Login outcome user_not_found for {LoginIdentifier}", inputLogin);
                 ModelState.AddModelError(string.Empty, "User not found.");
                 return Page();
             }
