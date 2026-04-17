@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
     dbserver.vm.hostname = "dbserver"
     
     dbserver.trigger.after :up do |trigger|
-      trigger.info =  "Writing dbserver's IP to file..."
+      trigger.info = "Writing dbserver's IP to file..."
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($ip_file, remote_ip)
@@ -30,23 +30,23 @@ Vagrant.configure("2") do |config|
       end
     end
    
-   dbserver.vm.provision "shell", inline: <<-SHELL
-         # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
-         sudo fuser -vk -TERM /var/lib/apt/lists/lock
-         sudo apt-get update
-         
-         cd ../vagrant
-         chmod +x docker-cli.sh
-         ./docker-cli.sh
-         ./dbserver-firewall.sh
+    dbserver.vm.provision "shell", inline: <<-SHELL
+      sudo fuser -vk -TERM /var/lib/apt/lists/lock
+      sudo apt-get update
+      
+      cd ../vagrant
+      chmod +x docker-cli.sh
+      ./docker-cli.sh
+      ./dbserver-firewall.sh
    
-         cd database
-         docker compose up --build -d
-       SHELL
-     end
+      cd database
+      docker compose up --build -d
+    SHELL
+  end
 
-  config.vm.define "itu_minitwit", primary: true do |server|
-    server.vm.provider :digital_ocean do |provider|
+  # Swarm cluster 1: itu-minitwit
+  config.vm.define "itu-minitwit-manager", primary: true do |manager|
+    manager.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
       provider.image = 'ubuntu-22-04-x64'
@@ -55,10 +55,10 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit"
+    manager.vm.hostname = "itu-minitwit-manager"
     
-    server.trigger.before :up do |trigger|
-      trigger.info =  "Waiting to create server until dbserver's IP is available."
+    manager.trigger.before :up do |trigger|
+      trigger.info = "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
         ip_file = "db_ip.txt"
         while File.zero?(ip_file) do
@@ -69,11 +69,11 @@ Vagrant.configure("2") do |config|
       end
     end
 
-    server.trigger.after :destroy do |trigger|
+    manager.trigger.after :destroy do |trigger|
       trigger.info = "Cleaning up IP file..."
       trigger.ruby do |env, machine|
         if File.exist?($ip_file)
-          File.open($ip_file, "w") {}  # Opens in write mode and immediately closes, clearing contents
+          File.open($ip_file, "w") {}
           puts "Cleared IP file contents."
         else
           puts "IP file not found, nothing to clear."
@@ -81,36 +81,77 @@ Vagrant.configure("2") do |config|
       end
     end
     
-    server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: <<-SHELL
-      # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: <<-SHELL
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
     
-      # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
         echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
       fi
       
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
-        echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+        echo ". $HOME/.bashrc" >> $HOME/.bash_profile"
       fi
       
       source $HOME/.bash_profile
 
       cd ../vagrant
-      chmod +x deploy.sh
       chmod +x docker-cli.sh
+      chmod +x deploy.sh
+      chmod +x minitwit-firewall.sh
       ./docker-cli.sh
       ./minitwit-firewall.sh
+      
+      # Initialize Docker Swarm Manager
+      docker swarm init --advertise-addr $(hostname -I | awk '{print $2}')
+      
+      # Save the join token for workers
+      docker swarm join-token worker | grep "docker swarm join" > /tmp/swarm_join_token.txt
+      
       ./deploy.sh
     SHELL
   end
 
-  config.vm.define "itu_minitwit2", primary: false do |server|
-    server.vm.provider :digital_ocean do |provider|
+  # Swarm workers for cluster 1
+  (1..2).each do |i|
+    config.vm.define "itu-minitwit-worker-#{i}", primary: false do |worker|
+      worker.vm.provider :digital_ocean do |provider|
+        provider.ssh_key_name = ENV["SSH_KEY_NAME"]
+        provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+        provider.image = 'ubuntu-22-04-x64'
+        provider.region = 'fra1'
+        provider.size = 's-1vcpu-1gb'
+        provider.privatenetworking = true
+      end
+
+      worker.vm.hostname = "itu-minitwit-worker-#{i}"
+      
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: <<-SHELL
+        sudo fuser -vk -TERM /var/lib/apt/lists/lock
+        sudo apt-get update
+      
+        if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+          echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+        fi
+        
+        source $HOME/.bash_profile
+
+        cd ../vagrant
+        chmod +x docker-cli.sh
+        chmod +x minitwit-firewall.sh
+        ./docker-cli.sh
+        ./minitwit-firewall.sh
+      SHELL
+    end
+  end
+
+  # Swarm cluster 2: itu-minitwit2
+  config.vm.define "itu-minitwit2-manager", primary: false do |manager|
+    manager.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
       provider.image = 'ubuntu-22-04-x64'
@@ -119,45 +160,18 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit2"
+    manager.vm.hostname = "itu-minitwit2-manager"
     
-    server.trigger.before :up do |trigger|
-      trigger.info =  "Waiting to create server until dbserver's IP is available."
-      trigger.ruby do |env,machine|
-        ip_file = "db_ip.txt"
-        while File.zero?(ip_file) do
-          sleep(1)
-        end
-        db_ip = File.read($ip_file).strip()
-        puts "Now, I have the dbserver's IP address: #{db_ip}"
-      end
-    end
-
-    server.trigger.after :destroy do |trigger|
-      trigger.info = "Cleaning up IP file..."
-      trigger.ruby do |env, machine|
-        if File.exist?($ip_file)
-          File.open($ip_file, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
-        else
-          puts "IP file not found, nothing to clear."
-        end
-      end
-    end
-    
-    server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: <<-SHELL
-      # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: <<-SHELL
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
     
-      # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
         echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
       fi
       
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
@@ -165,14 +179,58 @@ Vagrant.configure("2") do |config|
       source $HOME/.bash_profile
 
       cd ../vagrant
-      chmod +x deploy.sh
       chmod +x docker-cli.sh
+      chmod +x deploy.sh
+      chmod +x minitwit-firewall.sh
       ./docker-cli.sh
       ./minitwit-firewall.sh
+      
+      # Initialize Docker Swarm Manager
+      docker swarm init --advertise-addr $(hostname -I | awk '{print $2}')
+      
+      # Save the join token for workers
+      docker swarm join-token worker | grep "docker swarm join" > /tmp/swarm_join_token.txt
+      
       ./deploy.sh
     SHELL
   end
-  
+
+  # Swarm workers for cluster 2
+  (1..2).each do |i|
+    config.vm.define "itu-minitwit2-worker-#{i}", primary: false do |worker|
+      worker.vm.provider :digital_ocean do |provider|
+        provider.ssh_key_name = ENV["SSH_KEY_NAME"]
+        provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+        provider.image = 'ubuntu-22-04-x64'
+        provider.region = 'fra1'
+        provider.size = 's-1vcpu-1gb'
+        provider.privatenetworking = true
+      end
+
+      worker.vm.hostname = "itu-minitwit2-worker-#{i}"
+      
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: <<-SHELL
+        sudo fuser -vk -TERM /var/lib/apt/lists/lock
+        sudo apt-get update
+      
+        if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+          echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+        fi
+        
+        source $HOME/.bash_profile
+
+        cd ../vagrant
+        chmod +x docker-cli.sh
+        chmod +x minitwit-firewall.sh
+        ./docker-cli.sh
+        ./minitwit-firewall.sh
+      SHELL
+    end
+  end
+
+  # Load balancers remain unchanged
   config.vm.define "itu-minitwit-load-balancer", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
