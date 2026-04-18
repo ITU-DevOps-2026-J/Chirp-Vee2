@@ -5,7 +5,6 @@ networks:
 
 services:
   app:
-    container_name: minitwit
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
@@ -29,7 +28,6 @@ services:
       context: .
       dockerfile: ./monitoring/prometheus/Dockerfile
     image: ${DOCKER_USERNAME}/prometheus
-    container_name: prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
@@ -44,7 +42,6 @@ services:
       context: .
       dockerfile: ./monitoring/grafana/Dockerfile
     image: ${DOCKER_USERNAME}/grafana
-    container_name: grafana
     ports:
       - "3000:3000"
     networks:
@@ -54,7 +51,6 @@ services:
 
   loki:
     image: grafana/loki:3.6.7
-    container_name: loki
     ports:
       - "3100:3100"
     volumes:
@@ -67,7 +63,6 @@ services:
 
   alloy:
     image: grafana/alloy:latest
-    container_name: alloy
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
