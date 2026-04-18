@@ -6,6 +6,7 @@ using Infrastructure.Services;
 using Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Prometheus;
@@ -33,6 +34,61 @@ public class Program
             LabelNames = ["status_code"],
             Buckets = Histogram.ExponentialBuckets(0.005, 2, 12)
         });
+
+    private static string? GetMetricPath(HttpContext context)
+    {
+        if (context.Request.Path.StartsWithSegments("/monitoring/metrics"))
+        {
+            return null;
+        }
+
+        if (context.GetEndpoint() is RouteEndpoint routeEndpoint &&
+            !string.IsNullOrWhiteSpace(routeEndpoint.RoutePattern.RawText))
+        {
+            return routeEndpoint.RoutePattern.RawText;
+        }
+
+        return NormalizePath(context.Request.Path);
+    }
+
+    private static string NormalizePath(PathString path)
+    {
+        if (!path.HasValue || string.IsNullOrWhiteSpace(path.Value))
+        {
+            return "unknown";
+        }
+
+        if (path == PathString.FromUriComponent("/"))
+        {
+            return "/";
+        }
+
+        var segments = path.Value!
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizePathSegment);
+
+        return "/" + string.Join("/", segments);
+    }
+
+    private static string NormalizePathSegment(string segment)
+    {
+        if (Guid.TryParse(segment, out _))
+        {
+            return "{id}";
+        }
+
+        if (segment.All(char.IsDigit))
+        {
+            return "{id}";
+        }
+
+        if (segment.Length > 32)
+        {
+            return "{id}";
+        }
+
+        return segment;
+    }
 
     //test
     /// <summary>
@@ -279,11 +335,10 @@ public class Program
         app.UseRouting();
         app.Use(async (context, next) =>
         {
-            var requestPath = context.Request.Path.HasValue
-                ? context.Request.Path.Value!
-                : "unknown";
+            var requestPath = GetMetricPath(context);
+            var pathLabel = requestPath ?? "unknown";
 
-            RequestMetricsContext.Path = requestPath;
+            RequestMetricsContext.Path = pathLabel;
             var timer = Stopwatch.StartNew();
 
             try
@@ -295,19 +350,21 @@ public class Program
                 timer.Stop();
                 var statusCode = context.Response.StatusCode.ToString();
 
-                RequestDuration
-                    .WithLabels(context.Request.Method, requestPath, statusCode)
-                    .Observe(timer.Elapsed.TotalSeconds);
-
-                if (context.Request.Method == HttpMethods.Get && requestPath == "/")
+                if (requestPath is not null)
                 {
-                    FrontPageDuration.WithLabels(statusCode).Observe(timer.Elapsed.TotalSeconds);
+                    RequestDuration
+                        .WithLabels(context.Request.Method, pathLabel, statusCode)
+                        .Observe(timer.Elapsed.TotalSeconds);
+
+                    if (context.Request.Method == HttpMethods.Get && pathLabel == "/")
+                    {
+                        FrontPageDuration.WithLabels(statusCode).Observe(timer.Elapsed.TotalSeconds);
+                    }
                 }
 
                 RequestMetricsContext.Path = "unknown";
             }
         });
-        app.UseHttpMetrics();
         app.MapControllers();
         app.MapMetrics("/monitoring/metrics");
         app.UseAuthentication();
