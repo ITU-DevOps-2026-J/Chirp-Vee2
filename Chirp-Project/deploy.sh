@@ -24,4 +24,4 @@ cd "$PROJECT_DIR"
 docker volume create minitwit-grafana-storage >/dev/null
 
 docker compose -f docker-compose.yml pull
-docker compose -f docker-compose.yml up -d --remove-orphans
+docker stack deploy -c docker-compose.yml $MINITWIT_STACK_NAME

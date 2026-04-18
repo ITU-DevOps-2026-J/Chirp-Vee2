@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-MANAGER_IP=$1
-
 if [ -z "$MANAGER_IP" ]; then
     echo "Error: Manager IP address not provided"
     exit 1
