@@ -87,12 +87,13 @@ Vagrant.configure("2") do |config|
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
     
+      # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
         echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
       fi
       
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
-        echo ". $HOME/.bashrc" >> $HOME/.bash_profile"
+        echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
       
       source $HOME/.bash_profile
@@ -172,6 +173,7 @@ Vagrant.configure("2") do |config|
         echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
       fi
       
+      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
