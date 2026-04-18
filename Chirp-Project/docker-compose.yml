@@ -49,6 +49,8 @@ services:
       - "3000:3000"
     networks:
       - itu-minitwit-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
 
   loki:
     image: grafana/loki:3.6.7
@@ -86,6 +88,8 @@ volumes:
     name: minitwit-loki-data
   alloy-data:
     name: minitwit-alloy-data
+  grafana-storage:
+    name: minitwit-grafana-storage
   prometheus-data:
     name: minitwit-prometheus-data
   db-data:
