@@ -47,12 +47,21 @@ get_peer_private_ip() {
 
   curl -fsS -H "Authorization: Bearer ${DO_API_TOKEN}" \
     "https://api.digitalocean.com/v2/droplets?per_page=200" | \
-    python3 - "$peer_name" <<'PY'
+  python3 -c '
 import json
 import sys
 
 peer = sys.argv[1]
-data = json.load(sys.stdin)
+
+try:
+  payload = sys.stdin.read()
+  if not payload.strip():
+    print("")
+    raise SystemExit(0)
+  data = json.loads(payload)
+except Exception:
+  print("")
+  raise SystemExit(0)
 
 for droplet in data.get("droplets", []):
     if droplet.get("name") != peer:
@@ -63,7 +72,7 @@ for droplet in data.get("droplets", []):
             raise SystemExit(0)
 
 print("")
-PY
+' "$peer_name"
 }
 
 echo "Waiting for peer load balancer '${PEER_LB_NAME}' private IP..."

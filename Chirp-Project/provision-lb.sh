@@ -22,9 +22,9 @@ BACKEND_1=$4
 BACKEND_2=$5
 SRC_IP=$6
 PEER_IP=$7
-VIRTUAL_IP="157.245.27.199"
+VIRTUAL_IP="129.212.253.237" #"157.245.27.199"
 # Ports exposed on the reserved IP and forwarded to the same backend port.
-FORWARDED_PORTS="8080 3000 9090 3100"
+FORWARDED_PORTS="8080" # 3000 9090 3100"
 
 echo "Provisioning load balancer: $HOSTNAME as $STATE with priority $PRIORITY"
 
@@ -48,10 +48,10 @@ server {
 
     location / {
         proxy_pass http://backend_servers;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 EOF
@@ -84,6 +84,14 @@ if ! grep -q '^include /etc/nginx/stream.conf;$' /etc/nginx/nginx.conf; then
     sed -i '/^http {/i include /etc/nginx/stream.conf;' /etc/nginx/nginx.conf
 fi
 
+# Allow forwarded service ports through UFW on the load balancer.
+for port in $FORWARDED_PORTS; do
+    ufw allow ${port}/tcp
+done
+
+# Allow keepalived peer traffic over the private interface.
+ufw allow in on eth1 from ${PEER_IP} to any
+
 # Test and reload Nginx
 nginx -t
 systemctl restart nginx
@@ -115,7 +123,7 @@ fi
 LOG_FILE=/var/log/keepalived-master.log
 echo "[$(date -Iseconds)] notify_master invoked" >> "$LOG_FILE"
 
-IP='157.245.27.199'
+IP='129.212.253.237'
 ID=$(curl -s http://169.254.169.254/metadata/v1/id)
 HAS_RESERVED_IP=$(curl -s http://169.254.169.254/metadata/v1/reserved_ip/ipv4/active)
 

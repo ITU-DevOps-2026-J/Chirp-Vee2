@@ -1,9 +1,9 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-$ip_file = "db_ip.txt"
-$minitwit1_ip = "minitwit1_ip.txt"
-$minitwit2_ip = "minitwit2_ip.txt"
+$ip_file = "db_ip-test.txt"
+$minitwit1_ip = "minitwit1_ip-test.txt"
+$minitwit2_ip = "minitwit2_ip-test.txt"
 
 Vagrant.configure("2") do |config|
   config.vm.box = 'digital_ocean'
@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
   config.ssh.private_key_path = '~/.ssh/id_rsa'
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
-  config.vm.define "dbserver", primary: false do |dbserver|
+  config.vm.define "dbserver-test", primary: false do |dbserver|
     dbserver.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
      end
  
-    dbserver.vm.hostname = "dbserver"
+    dbserver.vm.hostname = "dbserver-test"
     
     dbserver.trigger.after :up do |trigger|
       trigger.info =  "Writing dbserver's IP to file..."
@@ -47,7 +47,7 @@ Vagrant.configure("2") do |config|
        SHELL
      end
 
-  config.vm.define "itu_minitwit", primary: true do |server|
+  config.vm.define "itu_minitwit-test", primary: true do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -57,12 +57,12 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit"
+    server.vm.hostname = "itu-minitwit-test"
     
     server.trigger.before :up do |trigger|
       trigger.info =  "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
-        ip_file = "db_ip.txt"
+        ip_file = "db_ip-test.txt"
         while File.zero?(ip_file) do
           sleep(1)
         end
@@ -101,7 +101,7 @@ Vagrant.configure("2") do |config|
     
       # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
-        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
+        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip-test.txt)'" >> "$HOME/.bash_profile"
       fi
       
       # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
     SHELL
   end
 
-  config.vm.define "itu_minitwit2", primary: false do |server|
+  config.vm.define "itu_minitwit2-test", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -130,12 +130,12 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit2"
+    server.vm.hostname = "itu-minitwit2-test"
     
     server.trigger.before :up do |trigger|
       trigger.info =  "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
-        ip_file = "db_ip.txt"
+        ip_file = "db_ip-test.txt"
         while File.zero?(ip_file) do
           sleep(1)
         end
@@ -174,7 +174,7 @@ Vagrant.configure("2") do |config|
     
       # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
-        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
+        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip-test.txt)'" >> "$HOME/.bash_profile"
       fi
       
       # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
@@ -193,7 +193,7 @@ Vagrant.configure("2") do |config|
     SHELL
   end
   
-  config.vm.define "itu-minitwit-load-balancer", primary: false do |server|
+  config.vm.define "itu-minitwit-load-balancer-test", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -203,12 +203,12 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit-load-balancer"
+    server.vm.hostname = "itu-minitwit-load-balancer-test"
     server.trigger.before :up do |trigger|
           trigger.info =  "Waiting to create loadbalancer 1 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
-            minitwit1_ip = "minitwit1_ip.txt"
-            minitwit2_ip = "minitwit2_ip.txt"
+            minitwit1_ip = "minitwit1_ip-test.txt"
+            minitwit2_ip = "minitwit2_ip-test.txt"
             while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
               sleep(1)
             end
@@ -249,12 +249,12 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
 
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer MASTER 255 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer2"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer2-test"
       # ./tls.sh
     SHELL
   end
 
-  config.vm.define "itu-minitwit-load-balancer2", primary: false do |server|
+  config.vm.define "itu-minitwit-load-balancer2-test", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -264,13 +264,13 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit-load-balancer2"
+    server.vm.hostname = "itu-minitwit-load-balancer2-test"
     
     server.trigger.before :up do |trigger|
-          trigger.info =  "Waiting to create loadbalancer 1 until minitwits' IPs are available."
+          trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
-            minitwit1_ip = "minitwit1_ip.txt"
-            minitwit2_ip = "minitwit2_ip.txt"
+            minitwit1_ip = "minitwit1_ip-test.txt"
+            minitwit2_ip = "minitwit2_ip-test.txt"
             while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
               sleep(1)
             end
@@ -309,7 +309,7 @@ Vagrant.configure("2") do |config|
       chmod +x prepare-lb-provision.sh
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer2 BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer-test"
       # ./tls.sh
     SHELL
   end
