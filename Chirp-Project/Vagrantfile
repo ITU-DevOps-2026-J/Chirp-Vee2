@@ -108,8 +108,6 @@ Vagrant.configure("2") do |config|
       export MINITWIT_STACK_NAME="minitwit"
       ./docker-cli.sh
       ./minitwit-firewall.sh
-      
-      # Initialize Docker Swarm Manager
       ./init_swarm_manager.sh
       ./deploy.sh
     SHELL
