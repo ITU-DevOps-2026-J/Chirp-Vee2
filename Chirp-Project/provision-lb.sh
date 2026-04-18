@@ -1,16 +1,28 @@
 #!/bin/bash
 
 # Load balancer provisioning script
-# Args: $1 = hostname, $2 = state (MASTER/BACKUP), $3 = priority
+# Args:
+#   $1 = hostname
+#   $2 = state (MASTER/BACKUP)
+#   $3 = priority
+#   $4 = minitwit1 private IP
+#   $5 = minitwit2 private IP
+#   $6 = this LB private IP
+#   $7 = peer LB private IP
+
+if [ "$#" -lt 7 ]; then
+    echo "Usage: $0 <lb_name> <role> <priority> <minitwit1_ip> <minitwit2_ip> <lb_private_ip> <peer_lb_private_ip>" >&2
+    exit 1
+fi
 
 HOSTNAME=$1
 STATE=$2
 PRIORITY=$3
-SRC_IP=$4
-PEER_IP=$5
+BACKEND_1=$4
+BACKEND_2=$5
+SRC_IP=$6
+PEER_IP=$7
 VIRTUAL_IP="157.245.27.199"
-BACKEND_1="104.248.28.105"
-BACKEND_2="167.172.97.87"
 # Ports exposed on the reserved IP and forwarded to the same backend port.
 FORWARDED_PORTS="8080 3000 9090 3100"
 
@@ -23,11 +35,11 @@ apt-get update
 apt-get install -y nginx keepalived libnginx-mod-stream
 
 # Configure Nginx as a load balancer
-cat > /etc/nginx/sites-available/default <<'EOF'
+cat > /etc/nginx/sites-available/default <<EOF
 upstream backend_servers {
     ip_hash;
-    server 104.248.28.105;
-    server 167.172.97.87;
+    server ${BACKEND_1};
+    server ${BACKEND_2};
 }
 
 server {
