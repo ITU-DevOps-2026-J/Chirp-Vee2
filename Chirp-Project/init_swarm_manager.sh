@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ -z "$MANAGER_STACK_NAME" ]; then
+if [[ -z "$MANAGER_STACK_NAME" ]]; then
     echo "Error: Manager IP address not provided"
     exit 1
 fi
