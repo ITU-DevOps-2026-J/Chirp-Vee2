@@ -310,7 +310,7 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
       ./prepare-lb-provision.sh itu-minitwit-load-balancer2 BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer"
-      # ./tls.sh
+      ./tls.sh
     SHELL
   end
 

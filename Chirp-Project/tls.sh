@@ -39,10 +39,9 @@ sudo ufw delete allow 'Nginx HTTP'
 sudo ufw allow ssh
 sudo ufw status
 
-CERTBOT_EMAIL="${CERTBOT_EMAIL:-dakl@itu.dk}"
 sudo certbot --nginx -d veechirp.app \
     --non-interactive \
     --agree-tos \
-    -m "$CERTBOT_EMAIL" \
+    -m dakl@itu.dk \
     --redirect \
     --keep-until-expiring
