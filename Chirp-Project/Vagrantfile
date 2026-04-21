@@ -116,7 +116,6 @@ Vagrant.configure("2") do |config|
       chmod +x deploy.sh
       chmod +x minitwit-firewall.sh
       chmod +x init_swarm_manager.sh
-      export MINITWIT_STACK_NAME="minitwit"
       ./docker-cli.sh
       ./minitwit-firewall.sh
       ./init_swarm_manager.sh
@@ -166,7 +165,6 @@ Vagrant.configure("2") do |config|
         chmod +x docker-cli.sh
         chmod +x minitwit-firewall.sh
         chmod +x join_swarm_worker.sh
-        export MINITWIT_STACK_NAME="minitwit"
         ./docker-cli.sh
         ./minitwit-firewall.sh
         ./join_swarm_worker.sh
@@ -244,7 +242,6 @@ Vagrant.configure("2") do |config|
       chmod +x deploy.sh
       chmod +x minitwit-firewall.sh
       chmod +x init_swarm_manager.sh
-      export MINITWIT_STACK_NAME="minitwit2"
       ./docker-cli.sh
       ./minitwit-firewall.sh
       ./init_swarm_manager.sh
@@ -294,7 +291,6 @@ Vagrant.configure("2") do |config|
         chmod +x docker-cli.sh
         chmod +x minitwit-firewall.sh
         chmod +x join_swarm_worker.sh
-        export MINITWIT_STACK_NAME="minitwit2"
         ./docker-cli.sh
         ./minitwit-firewall.sh
         ./join_swarm_worker.sh
