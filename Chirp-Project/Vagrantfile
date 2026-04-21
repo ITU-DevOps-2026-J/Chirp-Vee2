@@ -4,7 +4,6 @@
 $ip_file = "db_ip.txt"
 $minitwit1_ip = "minitwit1_ip.txt"
 $minitwit2_ip = "minitwit2_ip.txt"
-$loadbalancer_ip = "loadbalancer_ip.txt"
 
 Vagrant.configure("2") do |config|
   config.vm.box = 'digital_ocean'
@@ -210,14 +209,12 @@ Vagrant.configure("2") do |config|
           trigger.ruby do |env,machine|
             minitwit1_ip = "minitwit1_ip.txt"
             minitwit2_ip = "minitwit2_ip.txt"
-            loadbalancer_ip = "loadbalancer_ip.txt"
-            while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) || File.zero?(loadbalancer_ip) do
+            while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
             minitwit2_ip = File.read($minitwit2_ip).strip()
-            loadbalancer_ip = File.read($loadbalancer_ip).strip()
-            puts "Now, I have the minitwit servers' IP addresses (and loadbalancer ip): #{minitwit1_ip} and #{minitwit2_ip}"
+            puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
           end
         end
 
@@ -286,15 +283,6 @@ Vagrant.configure("2") do |config|
           end
         end
 
-        server.trigger.after :up do |trigger|
-          trigger.info =  "Writing loadbalancer IP to file..."
-          trigger.ruby do |env,machine|
-            remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
-            File.write($loadbalancer_ip, remote_ip)
-          puts "loadbalancer2 IP is: #{remote_ip}"
-          end
-        end
-
         server.trigger.after :destroy do |trigger|
           trigger.info = "Cleaning up minitwit IPs file..."
           trigger.ruby do |env, machine|
@@ -330,8 +318,9 @@ Vagrant.configure("2") do |config|
       chmod +x prepare-lb-provision.sh
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer2 BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer"
       ./tls-backup.sh
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer2 BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer"
+
     SHELL
   end
 
