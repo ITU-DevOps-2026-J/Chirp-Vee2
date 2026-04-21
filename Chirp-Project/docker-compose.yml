@@ -30,6 +30,8 @@ services:
     image: ${DOCKER_USERNAME}/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.wal-compression"
+      - "--storage.tsdb.retention.time=7d"
     ports:
       - "9090:9090"
     networks:

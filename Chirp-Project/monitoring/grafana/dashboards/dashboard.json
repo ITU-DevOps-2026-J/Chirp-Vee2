@@ -26,7 +26,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Top endpoints by average response time over the last 5 minutes.",
+      "description": "Top routes by average response time over the last 5 minutes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -63,7 +63,7 @@
           "refId": "A"
         }
       ],
-      "title": "Slowest API/Page Endpoints",
+      "title": "Slowest Routes",
       "type": "timeseries"
     },
     {
@@ -71,7 +71,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Single-value answer to: which endpoint is slowest and how slow is it right now.",
+      "description": "Single-value answer to: which route is slowest and how slow is it right now.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -126,7 +126,7 @@
           "refId": "A"
         }
       ],
-      "title": "Current Slowest Endpoint Avg",
+      "title": "Current Slowest Route Avg",
       "type": "stat"
     },
     {
@@ -134,7 +134,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Share of request time spent in DB commands by path. Higher means DB-bound endpoint.",
+      "description": "Share of request time spent in DB commands by route. Higher means DB-bound route.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -171,7 +171,7 @@
           "refId": "A"
         }
       ],
-      "title": "Where Time Is Spent (DB Share by Path)",
+      "title": "Where Time Is Spent (DB Share by Route)",
       "type": "timeseries"
     },
     {
