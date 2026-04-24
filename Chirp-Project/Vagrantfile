@@ -1,6 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
+# co
 $ip_file = "db_ip-test.txt"
 $minitwit1_ip = "minitwit1_ip-test.txt"
 $minitwit2_ip = "minitwit2_ip-test.txt"
