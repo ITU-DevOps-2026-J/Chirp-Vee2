@@ -4,6 +4,8 @@
 $ip_file = "db_ip-test.txt"
 $minitwit1_ip = "minitwit1_ip-test.txt"
 $minitwit2_ip = "minitwit2_ip-test.txt"
+$minitwit1_token = "minitwit1_token-test.txt"
+$minitwit2_token = "minitwit2_token-test.txt"
 
 Vagrant.configure("2") do |config|
   config.vm.box = 'digital_ocean'
@@ -29,6 +31,18 @@ Vagrant.configure("2") do |config|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($ip_file, remote_ip)
         puts "dbserver IP is: #{remote_ip}"
+      end
+    end
+
+    dbserver.trigger.after :destroy do |trigger|
+      trigger.info = "Cleaning up IP file..."
+      trigger.ruby do |env, machine|
+        if File.exist?($ip_file)
+          File.open($ip_file, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared db IP file contents."
+        else
+          puts "IP file not found, nothing to clear."
+        end
       end
     end
    
@@ -68,7 +82,7 @@ Vagrant.configure("2") do |config|
           sleep(1)
         end
         db_ip = File.read($ip_file).strip()
-        puts "Now, I have the dbserver's IP address: #{db_ip}"
+        puts "itu-minitwit-manager: I have the dbserver's IP address: #{db_ip}"
       end
     end
 
@@ -77,9 +91,15 @@ Vagrant.configure("2") do |config|
       trigger.ruby do |env, machine|
         if File.exist?($minitwit1_ip)
           File.open($minitwit1_ip, "w") {} # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared minitwit ip IP file contents."
+          puts "Cleared minitwit 1 IP file contents."
         else
           puts "IP file not found, nothing to clear."
+        end
+         if File.exist?($minitwit1_token)
+          File.open($minitwit1_token, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 1 token file contents."
+        else
+          puts "Token file not found, nothing to clear."
         end
       end
     end
@@ -89,7 +109,12 @@ Vagrant.configure("2") do |config|
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($minitwit1_ip, remote_ip)
-        puts "minitwit1 IP is: #{remote_ip}"
+        token = ""
+        machine.communicate.execute("sudo docker swarm join-token worker -q") do |type, data|
+          token << data if type == :stdout
+        end
+        File.write($minitwit1_token, token.strip) 
+        puts "itu-minitwit-manager: minitwit1 IP is: #{remote_ip}"
       end
     end
     
@@ -143,11 +168,13 @@ Vagrant.configure("2") do |config|
           trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
           trigger.ruby do |env,machine|
             minitwit1_ip = "minitwit1_ip-test.txt"
-            while File.zero?(minitwit1_ip) do
+            minitwit1_token = "minitwit1_token-test.txt"
+            while File.zero?(minitwit1_ip) || File.zero?(minitwit1_token) do
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
-            puts "Now, I have the minitwit servers' IP address: #{minitwit1_ip}"
+            minitwit1_token = File.read($minitwit1_token).strip()
+            puts "itu-minitwit-worker-#{i}: I have the minitwit servers' IP address and token: #{minitwit1_ip} | #{minitwit1_token}"
           end
       end
       
@@ -168,8 +195,8 @@ Vagrant.configure("2") do |config|
         chmod +x minitwit-firewall.sh
         chmod +x join_swarm_worker.sh
         ./docker-cli.sh
-        ./minitwit-firewall.sh
-        ./join_swarm_worker.sh
+        ./minitwit-firewall.sh 
+        ./join_swarm_worker.sh "$(cat minitwit1_ip-test.txt)" "$(cat minitwit1_token-test.txt)"
       SHELL
     end
   end
@@ -195,7 +222,7 @@ Vagrant.configure("2") do |config|
           sleep(1)
         end
         db_ip = File.read($ip_file).strip()
-        puts "Now, I have the dbserver's IP address: #{db_ip}"
+        puts "itu-minitwit-manager2: I have the dbserver's IP address: #{db_ip}"
       end
     end
 
@@ -208,6 +235,12 @@ Vagrant.configure("2") do |config|
         else
           puts "IP file not found, nothing to clear."
         end
+         if File.exist?($minitwit2_token)
+          File.open($minitwit2_token, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 2 token file contents."
+        else
+          puts "Token file not found, nothing to clear."
+        end
       end
     end
 
@@ -216,7 +249,12 @@ Vagrant.configure("2") do |config|
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($minitwit2_ip, remote_ip)
-        puts "minitwit2 IP is: #{remote_ip}"
+        token = ""
+        machine.communicate.execute("sudo docker swarm join-token worker -q") do |type, data|
+          token << data if type == :stdout
+        end
+        File.write($minitwit2_token, token.strip) 
+        puts "itu-minitwit-manager2: minitwit2 IP is: #{remote_ip}"
       end
     end
     
@@ -270,11 +308,13 @@ Vagrant.configure("2") do |config|
           trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
           trigger.ruby do |env,machine|
             minitwit2_ip = "minitwit2_ip-test.txt"
-            while File.zero?(minitwit2_ip) do
+            minitwit2_token = "minitwit2_token-test.txt"
+            while File.zero?(minitwit2_ip) || File.zero?(minitwit2_token) do
               sleep(1)
             end
             minitwit2_ip = File.read($minitwit2_ip).strip()
-            puts "Now, I have the minitwit servers' IP address: #{minitwit2_ip}"
+            minitwit2_token = File.read($minitwit2_token).strip()
+            puts "itu-minitwit2-worker-#{i}: I have the minitwit servers' IP address and token: #{minitwit2_ip} | #{minitwit2_token}"
           end
       end
       
@@ -295,8 +335,8 @@ Vagrant.configure("2") do |config|
         chmod +x minitwit-firewall.sh
         chmod +x join_swarm_worker.sh
         ./docker-cli.sh
-        ./minitwit-firewall.sh
-        ./join_swarm_worker.sh
+        ./minitwit-firewall.sh 
+        ./join_swarm_worker.sh "$(cat minitwit2_ip-test.txt)" "$(cat minitwit2_token-test.txt)"
       SHELL
     end
   end
@@ -324,7 +364,7 @@ Vagrant.configure("2") do |config|
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
             minitwit2_ip = File.read($minitwit2_ip).strip()
-            puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
+            puts "itu-minitwit-load-balancer-test: I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
           end
     end
 
@@ -345,7 +385,7 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
 
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer2-test"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer2-test"
       # ./tls.sh
     SHELL
   end
@@ -370,7 +410,7 @@ Vagrant.configure("2") do |config|
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
-            puts "Now, I have the minitwit servers' IP address: #{minitwit1_ip}"
+            puts "itu-minitwit-load-balancer2-test: I have the minitwit servers' IP address: #{minitwit1_ip}"
           end
     end
 
@@ -390,7 +430,7 @@ Vagrant.configure("2") do |config|
       chmod +x prepare-lb-provision.sh
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer-test"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer-test"
       # ./tls.sh
     SHELL
   end
