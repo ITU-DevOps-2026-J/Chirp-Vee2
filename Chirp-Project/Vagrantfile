@@ -75,9 +75,9 @@ Vagrant.configure("2") do |config|
     manager.trigger.after :destroy do |trigger|
       trigger.info = "Cleaning up IP file..."
       trigger.ruby do |env, machine|
-        if File.exist?($ip_file)
-          File.open($ip_file, "w") {} # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
+        if File.exist?($minitwit1_ip)
+          File.open($minitwit1_ip, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit ip IP file contents."
         else
           puts "IP file not found, nothing to clear."
         end
@@ -110,13 +110,14 @@ Vagrant.configure("2") do |config|
       fi
       
       source $HOME/.bash_profile
-
+      
       cd ../vagrant
       chmod +x docker-cli.sh
       chmod +x deploy.sh
       chmod +x minitwit-firewall.sh
       chmod +x init_swarm_manager.sh
       export MINITWIT_STACK_NAME="minitwit"
+      export MANAGER_IP="$(curl -fsS http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)"
       ./docker-cli.sh
       ./minitwit-firewall.sh
       ./init_swarm_manager.sh
@@ -139,7 +140,7 @@ Vagrant.configure("2") do |config|
       worker.vm.hostname = "itu-minitwit-worker-#{i}"
 
       worker.trigger.before :up do |trigger|
-          trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
+          trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
           trigger.ruby do |env,machine|
             minitwit1_ip = "minitwit1_ip-test.txt"
             while File.zero?(minitwit1_ip) do
@@ -173,8 +174,8 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  # Swarm cluster 2: itu-minitwit2
-  config.vm.define "itu-minitwit2-manager", primary: false do |manager|
+  # Swarm cluster 2: itu-minitwit
+  config.vm.define "itu-minitwit-manager2", primary: true do |manager|
     manager.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -184,8 +185,8 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    manager.vm.hostname = "itu-minitwit2-manager"
-
+    manager.vm.hostname = "itu-minitwit-manager2"
+    
     manager.trigger.before :up do |trigger|
       trigger.info = "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
@@ -201,9 +202,9 @@ Vagrant.configure("2") do |config|
     manager.trigger.after :destroy do |trigger|
       trigger.info = "Cleaning up IP file..."
       trigger.ruby do |env, machine|
-        if File.exist?($ip_file)
-          File.open($ip_file, "w") {} # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
+        if File.exist?($minitwit2_ip)
+          File.open($minitwit2_ip, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 2 IP file contents."
         else
           puts "IP file not found, nothing to clear."
         end
@@ -225,25 +226,25 @@ Vagrant.configure("2") do |config|
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
-
+    
       # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
         echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip-test.txt)'" >> "$HOME/.bash_profile"
       fi
       
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
       
       source $HOME/.bash_profile
-
+      
       cd ../vagrant
       chmod +x docker-cli.sh
       chmod +x deploy.sh
       chmod +x minitwit-firewall.sh
       chmod +x init_swarm_manager.sh
       export MINITWIT_STACK_NAME="minitwit2"
+      export MANAGER_IP="$(curl -fsS http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)"
       ./docker-cli.sh
       ./minitwit-firewall.sh
       ./init_swarm_manager.sh
@@ -266,7 +267,7 @@ Vagrant.configure("2") do |config|
       worker.vm.hostname = "itu-minitwit2-worker-#{i}"
 
       worker.trigger.before :up do |trigger|
-          trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
+          trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
           trigger.ruby do |env,machine|
             minitwit2_ip = "minitwit2_ip-test.txt"
             while File.zero?(minitwit2_ip) do
@@ -312,6 +313,7 @@ Vagrant.configure("2") do |config|
     end
 
     server.vm.hostname = "itu-minitwit-load-balancer-test"
+
     server.trigger.before :up do |trigger|
           trigger.info =  "Waiting to create loadbalancer 1 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
@@ -325,20 +327,6 @@ Vagrant.configure("2") do |config|
             puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
           end
     end
-
-    server.trigger.after :destroy do |trigger|
-      trigger.info = "Cleaning up minitwit IPs file..."
-      trigger.ruby do |env, machine|
-        if File.exist?($minitwit1_ip) || File.exist?($minitwit2_ip)
-          File.open($minitwit1_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          File.open($minitwit2_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
-        else
-          puts "IP file not found, nothing to clear."
-        end
-      end
-    end
-
 
     server.vm.provision "shell", inline: 'echo "export DO_TOKEN=' + "'" + ENV["DO_TOKEN"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: <<-SHELL
@@ -357,7 +345,7 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
 
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer-test"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer2-test"
       # ./tls.sh
     SHELL
   end
@@ -378,29 +366,14 @@ Vagrant.configure("2") do |config|
           trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
             minitwit1_ip = "minitwit1_ip-test.txt"
-            minitwit2_ip = "minitwit2_ip-test.txt"
-            while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
+            while File.zero?(minitwit1_ip) do
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
-            minitwit2_ip = File.read($minitwit2_ip).strip()
-            puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
+            puts "Now, I have the minitwit servers' IP address: #{minitwit1_ip}"
           end
     end
 
-    server.trigger.after :destroy do |trigger|
-      trigger.info = "Cleaning up minitwit IPs file..."
-      trigger.ruby do |env, machine|
-        if File.exist?($minitwit1_ip) || File.exist?($minitwit2_ip)
-          File.open($minitwit1_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          File.open($minitwit2_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
-        else
-          puts "IP file not found, nothing to clear."
-        end
-      end
-    end
-    
     server.vm.provision "shell", inline: 'echo "export DO_TOKEN=' + "'" + ENV["DO_TOKEN"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: <<-SHELL
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
@@ -417,7 +390,7 @@ Vagrant.configure("2") do |config|
       chmod +x prepare-lb-provision.sh
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer-test"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer-test"
       # ./tls.sh
     SHELL
   end

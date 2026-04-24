@@ -12,5 +12,4 @@ sudo ufw allow 7946/tcp
 sudo ufw allow 7946/udp
 sudo ufw allow 4789/udp
 sudo ufw allow 5001/tcp
-sudo ufw enable
 echo "y" | sudo ufw enable

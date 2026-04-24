@@ -23,5 +23,5 @@ cd "$PROJECT_DIR"
 # Make Grafana storage resilient to re-deploys and accidental compose cleanup.
 docker volume create minitwit-grafana-storage >/dev/null
 
-docker compose -f docker-compose.yml pull
-docker stack deploy -c docker-compose.yml $MINITWIT_STACK_NAME
+docker compose -f docker-stack.yml pull
+docker stack deploy -c docker-stack.yml $MINITWIT_STACK_NAME
