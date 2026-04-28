@@ -61,7 +61,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "topk(10, sum by (login_identifier) (count_over_time({container=\"minitwit\"} |= \"Login attempt for\" | regexp \"Login attempt for (?P<login_identifier>[^ ]+)\" [1h])))",
+          "expr": "topk(10, sum by (login_identifier) (count_over_time({service_name=\"minitwit_app\"} |= \"Login attempt for\" | regexp \"Login attempt for (?P<login_identifier>[^ ]+)\" [1h])))",
           "queryType": "range",
           "refId": "A"
         }
@@ -100,7 +100,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{container=\"minitwit\"} |= \"Login outcome\"",
+          "expr": "{service_name=\"minitwit_app\"} |= \"Login outcome\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -139,7 +139,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{container=\"minitwit\"}",
+          "expr": "{service_name=\"minitwit_app\"}",
           "queryType": "range",
           "refId": "A"
         }
