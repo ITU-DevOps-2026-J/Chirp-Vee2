@@ -63,7 +63,7 @@ Use Grafana + Prometheus + Loki to answer:
 - LogQL:
   topk(10, sum by (login_identifier) (
   count_over_time(
-  {container="minitwit"} |= "Login attempt for"
+  {service_name="app"} |= "Login attempt for"
   | regexp "Login attempt for (?P<login_identifier>[^ ]+)" [1h]
   )
   ))
@@ -75,8 +75,8 @@ Use Grafana + Prometheus + Loki to answer:
   - CPU Avg Last Hour
   - CPU Avg Last Day
 - PromQL:
-  avg_over_time((rate(process_cpu_seconds_total{job="itu-minittwit-app"}[5m]) _ 100)[1h:5m])
-  avg_over_time((rate(process_cpu_seconds_total{job="itu-minittwit-app"}[5m]) _ 100)[1d:5m])
+  avg*over_time((rate(process_cpu_seconds_total{job="itu-minittwit-app"}[5m]) * 100)[1h:5m])
+  avg*over_time((rate(process_cpu_seconds_total{job="itu-minittwit-app"}[5m]) * 100)[1d:5m])
 
 5. Average response time of application's front page
 

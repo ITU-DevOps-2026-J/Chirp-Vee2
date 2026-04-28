@@ -63,6 +63,7 @@ services:
     image: grafana/loki:3.6.7
     ports:
       - "3100:3100"
+      - "9095:9095"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml
       - loki-data:/loki
