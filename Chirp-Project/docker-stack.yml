@@ -61,6 +61,9 @@ services:
     image: grafana/loki:3.6.7
     ports:
       - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - itu-minitwit-network
@@ -85,3 +88,5 @@ services:
 volumes:
   grafana-storage:
     name: minitwit-grafana-storage
+  loki-data:
+    name: minitwit-loki-data
