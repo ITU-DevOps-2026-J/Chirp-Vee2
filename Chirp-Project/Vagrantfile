@@ -1,9 +1,11 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
-$ip_file = "db_ip.txt"
-$minitwit1_ip = "minitwit1_ip.txt"
-$minitwit2_ip = "minitwit2_ip.txt"
+# co
+$ip_file = "db_ip-test.txt"
+$minitwit1_ip = "minitwit1_ip-test.txt"
+$minitwit2_ip = "minitwit2_ip-test.txt"
+$minitwit1_token = "minitwit1_token-test.txt"
+$minitwit2_token = "minitwit2_token-test.txt"
 
 Vagrant.configure("2") do |config|
   config.vm.box = 'digital_ocean'
@@ -11,7 +13,7 @@ Vagrant.configure("2") do |config|
   config.ssh.private_key_path = '~/.ssh/id_rsa'
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
-  config.vm.define "dbserver", primary: false do |dbserver|
+  config.vm.define "dbserver-test", primary: false do |dbserver|
     dbserver.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -21,34 +23,47 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
      end
  
-    dbserver.vm.hostname = "dbserver"
+    dbserver.vm.hostname = "dbserver-test"
     
     dbserver.trigger.after :up do |trigger|
-      trigger.info =  "Writing dbserver's IP to file..."
+      trigger.info = "Writing dbserver's IP to file..."
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($ip_file, remote_ip)
         puts "dbserver IP is: #{remote_ip}"
       end
     end
-   
-   dbserver.vm.provision "shell", inline: <<-SHELL
-         # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
-         sudo fuser -vk -TERM /var/lib/apt/lists/lock
-         sudo apt-get update
-         
-         cd ../vagrant
-         chmod +x docker-cli.sh
-         ./docker-cli.sh
-         ./dbserver-firewall.sh
-   
-         cd database
-         docker compose up --build -d
-       SHELL
-     end
 
-  config.vm.define "itu_minitwit", primary: true do |server|
-    server.vm.provider :digital_ocean do |provider|
+    dbserver.trigger.after :destroy do |trigger|
+      trigger.info = "Cleaning up IP file..."
+      trigger.ruby do |env, machine|
+        if File.exist?($ip_file)
+          File.open($ip_file, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared db IP file contents."
+        else
+          puts "IP file not found, nothing to clear."
+        end
+      end
+    end
+   
+    dbserver.vm.provision "shell", inline: <<-SHELL
+      # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
+      sudo fuser -vk -TERM /var/lib/apt/lists/lock
+      sudo apt-get update
+      
+      cd ../vagrant
+      chmod +x docker-cli.sh
+      ./docker-cli.sh
+      ./dbserver-firewall.sh
+   
+      cd database
+      docker compose up --build -d
+    SHELL
+  end
+
+  # Swarm cluster 1: itu-minitwit
+  config.vm.define "itu-minitwit-manager", primary: true do |manager|
+    manager.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
       provider.image = 'ubuntu-22-04-x64'
@@ -57,71 +72,138 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit"
+    manager.vm.hostname = "itu-minitwit-manager"
     
-    server.trigger.before :up do |trigger|
-      trigger.info =  "Waiting to create server until dbserver's IP is available."
+    manager.trigger.before :up do |trigger|
+      trigger.info = "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
-        ip_file = "db_ip.txt"
+        ip_file = "db_ip-test.txt"
         while File.zero?(ip_file) do
           sleep(1)
         end
         db_ip = File.read($ip_file).strip()
-        puts "Now, I have the dbserver's IP address: #{db_ip}"
+        puts "itu-minitwit-manager: I have the dbserver's IP address: #{db_ip}"
       end
     end
 
-    server.trigger.after :destroy do |trigger|
+    manager.trigger.after :destroy do |trigger|
       trigger.info = "Cleaning up IP file..."
       trigger.ruby do |env, machine|
-        if File.exist?($ip_file)
-          File.open($ip_file, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
+        if File.exist?($minitwit1_ip)
+          File.open($minitwit1_ip, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 1 IP file contents."
         else
           puts "IP file not found, nothing to clear."
+        end
+         if File.exist?($minitwit1_token)
+          File.open($minitwit1_token, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 1 token file contents."
+        else
+          puts "Token file not found, nothing to clear."
         end
       end
     end
 
-    server.trigger.after :up do |trigger|
+    manager.trigger.after :up do |trigger|
       trigger.info =  "Writing minitwit IP to file..."
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($minitwit1_ip, remote_ip)
-        puts "minitwit1 IP is: #{remote_ip}"
+        token = ""
+        machine.communicate.execute("sudo docker swarm join-token worker -q") do |type, data|
+          token << data if type == :stdout
+        end
+        File.write($minitwit1_token, token.strip) 
+        puts "itu-minitwit-manager: minitwit1 IP is: #{remote_ip}"
       end
     end
     
-    server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: <<-SHELL
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: <<-SHELL
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
     
       # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
-        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
+        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip-test.txt)'" >> "$HOME/.bash_profile"
       fi
       
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
       
       source $HOME/.bash_profile
-
+      
       cd ../vagrant
-      chmod +x deploy.sh
       chmod +x docker-cli.sh
+      chmod +x deploy.sh
+      chmod +x minitwit-firewall.sh
+      chmod +x init_swarm_manager.sh
+      export MINITWIT_STACK_NAME="minitwit"
+      export MANAGER_IP="$(curl -fsS http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)"
       ./docker-cli.sh
       ./minitwit-firewall.sh
+      ./init_swarm_manager.sh
       ./deploy.sh
     SHELL
   end
 
-  config.vm.define "itu_minitwit2", primary: false do |server|
-    server.vm.provider :digital_ocean do |provider|
+  # Swarm workers for cluster 1
+  (1..2).each do |i|
+    config.vm.define "itu-minitwit-worker-#{i}", primary: false do |worker|
+      worker.vm.provider :digital_ocean do |provider|
+        provider.ssh_key_name = ENV["SSH_KEY_NAME"]
+        provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+        provider.image = 'ubuntu-22-04-x64'
+        provider.region = 'fra1'
+        provider.size = 's-1vcpu-1gb'
+        provider.privatenetworking = true
+      end
+
+      worker.vm.hostname = "itu-minitwit-worker-#{i}"
+
+      worker.trigger.before :up do |trigger|
+          trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
+          trigger.ruby do |env,machine|
+            minitwit1_ip = "minitwit1_ip-test.txt"
+            minitwit1_token = "minitwit1_token-test.txt"
+            while File.zero?(minitwit1_ip) || File.zero?(minitwit1_token) do
+              sleep(1)
+            end
+            minitwit1_ip = File.read($minitwit1_ip).strip()
+            minitwit1_token = File.read($minitwit1_token).strip()
+            puts "itu-minitwit-worker-#{i}: I have the minitwit servers' IP address and token: #{minitwit1_ip} | #{minitwit1_token}"
+          end
+      end
+      
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: <<-SHELL
+        sudo fuser -vk -TERM /var/lib/apt/lists/lock
+        sudo apt-get update
+      
+        if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+          echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+        fi
+        
+        source $HOME/.bash_profile
+
+        cd ../vagrant
+        chmod +x docker-cli.sh
+        chmod +x minitwit-firewall.sh
+        chmod +x join_swarm_worker.sh
+        ./docker-cli.sh
+        ./minitwit-firewall.sh 
+        ./join_swarm_worker.sh "$(cat minitwit1_ip-test.txt)" "$(cat minitwit1_token-test.txt)"
+      SHELL
+    end
+  end
+
+  # Swarm cluster 2: itu-minitwit
+  config.vm.define "itu-minitwit-manager2", primary: true do |manager|
+    manager.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
       provider.image = 'ubuntu-22-04-x64'
@@ -130,70 +212,137 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit2"
+    manager.vm.hostname = "itu-minitwit-manager2"
     
-    server.trigger.before :up do |trigger|
-      trigger.info =  "Waiting to create server until dbserver's IP is available."
+    manager.trigger.before :up do |trigger|
+      trigger.info = "Waiting to create server until dbserver's IP is available."
       trigger.ruby do |env,machine|
-        ip_file = "db_ip.txt"
+        ip_file = "db_ip-test.txt"
         while File.zero?(ip_file) do
           sleep(1)
         end
         db_ip = File.read($ip_file).strip()
-        puts "Now, I have the dbserver's IP address: #{db_ip}"
+        puts "itu-minitwit-manager2: I have the dbserver's IP address: #{db_ip}"
       end
     end
 
-    server.trigger.after :destroy do |trigger|
+    manager.trigger.after :destroy do |trigger|
       trigger.info = "Cleaning up IP file..."
       trigger.ruby do |env, machine|
-        if File.exist?($ip_file)
-          File.open($ip_file, "w") {}  # Opens in write mode and immediately closes, clearing contents
-          puts "Cleared IP file contents."
+        if File.exist?($minitwit2_ip)
+          File.open($minitwit2_ip, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 2 IP file contents."
         else
           puts "IP file not found, nothing to clear."
+        end
+         if File.exist?($minitwit2_token)
+          File.open($minitwit2_token, "w") {} # Opens in write mode and immediately closes, clearing contents
+          puts "Cleared minitwit 2 token file contents."
+        else
+          puts "Token file not found, nothing to clear."
         end
       end
     end
 
-    server.trigger.after :up do |trigger|
-      trigger.info =  "Writing minitwit2 IP to file..."
+    manager.trigger.after :up do |trigger|
+      trigger.info =  "Writing minitwit IP to file..."
       trigger.ruby do |env,machine|
         remote_ip = machine.instance_variable_get(:@communicator).instance_variable_get(:@connection_ssh_info)[:host]
         File.write($minitwit2_ip, remote_ip)
-        puts "minitwit2 IP is: #{remote_ip}"
+        token = ""
+        machine.communicate.execute("sudo docker swarm join-token worker -q") do |type, data|
+          token << data if type == :stdout
+        end
+        File.write($minitwit2_token, token.strip) 
+        puts "itu-minitwit-manager2: minitwit2 IP is: #{remote_ip}"
       end
     end
     
-    server.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
-    server.vm.provision "shell", inline: <<-SHELL
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+    manager.vm.provision "shell", inline: <<-SHELL
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
       sudo fuser -vk -TERM /var/lib/apt/lists/lock
       sudo apt-get update
     
       # Check if it's already in .bash_profile; if not, append it
       if ! grep -q "export DB_SERVER_IP=" "$HOME/.bash_profile"; then
-        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip.txt)'" >> "$HOME/.bash_profile"
+        echo "export DB_SERVER_IP='$(cat ../vagrant/db_ip-test.txt)'" >> "$HOME/.bash_profile"
       fi
       
-      # checks if "$HOME/.bashrc" is already inside "$HOME/.bash_profile" if not then append it the file into it
       if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
         echo ". $HOME/.bashrc" >> $HOME/.bash_profile
       fi
       
       source $HOME/.bash_profile
-
+      
       cd ../vagrant
-      chmod +x deploy.sh
       chmod +x docker-cli.sh
+      chmod +x deploy.sh
+      chmod +x minitwit-firewall.sh
+      chmod +x init_swarm_manager.sh
+      export MINITWIT_STACK_NAME="minitwit2"
+      export MANAGER_IP="$(curl -fsS http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)"
       ./docker-cli.sh
       ./minitwit-firewall.sh
+      ./init_swarm_manager.sh
       ./deploy.sh
     SHELL
   end
-  
-  config.vm.define "itu-minitwit-load-balancer", primary: false do |server|
+
+  # Swarm workers for cluster 2
+  (1..2).each do |i|
+    config.vm.define "itu-minitwit2-worker-#{i}", primary: false do |worker|
+      worker.vm.provider :digital_ocean do |provider|
+        provider.ssh_key_name = ENV["SSH_KEY_NAME"]
+        provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+        provider.image = 'ubuntu-22-04-x64'
+        provider.region = 'fra1'
+        provider.size = 's-1vcpu-1gb'
+        provider.privatenetworking = true
+      end
+
+      worker.vm.hostname = "itu-minitwit2-worker-#{i}"
+
+      worker.trigger.before :up do |trigger|
+          trigger.info =  "Waiting to create worker #{i} until minitwits' IPs are available."
+          trigger.ruby do |env,machine|
+            minitwit2_ip = "minitwit2_ip-test.txt"
+            minitwit2_token = "minitwit2_token-test.txt"
+            while File.zero?(minitwit2_ip) || File.zero?(minitwit2_token) do
+              sleep(1)
+            end
+            minitwit2_ip = File.read($minitwit2_ip).strip()
+            minitwit2_token = File.read($minitwit2_token).strip()
+            puts "itu-minitwit2-worker-#{i}: I have the minitwit servers' IP address and token: #{minitwit2_ip} | #{minitwit2_token}"
+          end
+      end
+      
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_USERNAME=' + "'" + ENV["DOCKER_USERNAME"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: 'echo "export DOCKER_ACCESS_TOKEN=' + "'" + ENV["DOCKER_ACCESS_TOKEN"] + "'" + '" >> ~/.bash_profile'
+      worker.vm.provision "shell", inline: <<-SHELL
+        sudo fuser -vk -TERM /var/lib/apt/lists/lock
+        sudo apt-get update
+      
+        if ! grep -q "$(cat $HOME/.bashrc)" $HOME/.bash_profile; then
+          echo ". $HOME/.bashrc" >> $HOME/.bash_profile
+        fi
+        
+        source $HOME/.bash_profile
+
+        cd ../vagrant
+        chmod +x docker-cli.sh
+        chmod +x minitwit-firewall.sh
+        chmod +x join_swarm_worker.sh
+        ./docker-cli.sh
+        ./minitwit-firewall.sh 
+        ./join_swarm_worker.sh "$(cat minitwit2_ip-test.txt)" "$(cat minitwit2_token-test.txt)"
+      SHELL
+    end
+  end
+
+  # Load balancers remain unchanged
+  config.vm.define "itu-minitwit-load-balancer-test", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -203,34 +352,21 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit-load-balancer"
+    server.vm.hostname = "itu-minitwit-load-balancer-test"
+
     server.trigger.before :up do |trigger|
           trigger.info =  "Waiting to create loadbalancer 1 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
-            minitwit1_ip = "minitwit1_ip.txt"
-            minitwit2_ip = "minitwit2_ip.txt"
+            minitwit1_ip = "minitwit1_ip-test.txt"
+            minitwit2_ip = "minitwit2_ip-test.txt"
             while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
             minitwit2_ip = File.read($minitwit2_ip).strip()
-            puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
+            puts "itu-minitwit-load-balancer-test: I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
           end
-        end
-
-        server.trigger.after :destroy do |trigger|
-          trigger.info = "Cleaning up minitwit IPs file..."
-          trigger.ruby do |env, machine|
-            if File.exist?($minitwit1_ip) || File.exist?($minitwit2_ip)
-              File.open($minitwit1_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-              File.open($minitwit2_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-              puts "Cleared IP file contents."
-            else
-              puts "IP file not found, nothing to clear."
-            end
-          end
-        end
-
+    end
 
     server.vm.provision "shell", inline: 'echo "export DO_TOKEN=' + "'" + ENV["DO_TOKEN"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: <<-SHELL
@@ -249,12 +385,12 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
 
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer MASTER 255 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer2"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer-test MASTER 255 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer2-test"
       # ./tls.sh
     SHELL
   end
 
-  config.vm.define "itu-minitwit-load-balancer2", primary: false do |server|
+  config.vm.define "itu-minitwit-load-balancer2-test", primary: false do |server|
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = ENV["SSH_KEY_NAME"]
       provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
@@ -264,35 +400,20 @@ Vagrant.configure("2") do |config|
       provider.privatenetworking = true
     end
 
-    server.vm.hostname = "itu-minitwit-load-balancer2"
+    server.vm.hostname = "itu-minitwit-load-balancer2-test"
     
     server.trigger.before :up do |trigger|
           trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
-            minitwit1_ip = "minitwit1_ip.txt"
-            minitwit2_ip = "minitwit2_ip.txt"
-            while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
+            minitwit1_ip = "minitwit1_ip-test.txt"
+            while File.zero?(minitwit1_ip) do
               sleep(1)
             end
             minitwit1_ip = File.read($minitwit1_ip).strip()
-            minitwit2_ip = File.read($minitwit2_ip).strip()
-            puts "Now, I have the minitwit servers' IP addresses: #{minitwit1_ip} and #{minitwit2_ip}"
+            puts "itu-minitwit-load-balancer2-test: I have the minitwit servers' IP address: #{minitwit1_ip}"
           end
-        end
+    end
 
-        server.trigger.after :destroy do |trigger|
-          trigger.info = "Cleaning up minitwit IPs file..."
-          trigger.ruby do |env, machine|
-            if File.exist?($minitwit1_ip) || File.exist?($minitwit2_ip)
-              File.open($minitwit1_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-              File.open($minitwit2_ip, "w") {}  # Opens in write mode and immediately closes, clearing contents
-              puts "Cleared IP file contents."
-            else
-              puts "IP file not found, nothing to clear."
-            end
-          end
-        end
-    
     server.vm.provision "shell", inline: 'echo "export DO_TOKEN=' + "'" + ENV["DO_TOKEN"] + "'" + '" >> ~/.bash_profile'
     server.vm.provision "shell", inline: <<-SHELL
       # The following addresses an issue in DO's Ubuntu images, which still contain a lock file
@@ -309,7 +430,7 @@ Vagrant.configure("2") do |config|
       chmod +x prepare-lb-provision.sh
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
-      ./prepare-lb-provision.sh itu-minitwit-load-balancer2 BACKUP 200 "$(cat minitwit1_ip.txt)" "$(cat minitwit2_ip.txt)" "itu-minitwit-load-balancer"
+      ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer-test"
       # ./tls.sh
     SHELL
   end

@@ -4,13 +4,20 @@ networks:
     name: itu-minitwit-network
 
 services:
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
   app:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
-    build:
-      dockerfile: ./Dockerfile
-      context: .
     image: ${DOCKER_USERNAME}/itu-minitwit
     ports:
       - "8080:8080"
@@ -21,12 +28,10 @@ services:
     depends_on:
       - grafana
       - prometheus
-    restart: unless-stopped
+    deploy:
+      replicas: 2
 
   prometheus:
-    build:
-      context: .
-      dockerfile: ./monitoring/prometheus/Dockerfile
     image: ${DOCKER_USERNAME}/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -40,9 +45,6 @@ services:
       - prometheus-data:/prometheus
 
   grafana:
-    build:
-      context: .
-      dockerfile: ./monitoring/grafana/Dockerfile
     image: ${DOCKER_USERNAME}/grafana
     ports:
       - "3000:3000"
@@ -61,7 +63,6 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - itu-minitwit-network
-    restart: unless-stopped
 
   alloy:
     image: grafana/alloy:latest
@@ -78,7 +79,6 @@ services:
       - itu-minitwit-network
     depends_on:
       - loki
-    restart: unless-stopped
 
 volumes:
   loki-data:
