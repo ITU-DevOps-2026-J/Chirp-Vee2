@@ -4,13 +4,20 @@ networks:
     name: itu-minitwit-network
 
 services:
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
   app:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=${DB_SERVER_IP};Port=5432;Database=mydatabase;Username=myuser;Password=mypassword
-    build:
-      dockerfile: ./Dockerfile
-      context: .
     image: ${DOCKER_USERNAME}/itu-minitwit
     ports:
       - "8080:8080"
@@ -18,15 +25,14 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - itu-minitwit-network
-    depends_on:
-      - grafana
-      - prometheus
-    restart: unless-stopped
+    deploy:
+      replicas: 2
+      placement:
+        constraints: [node.role == worker]
+        preferences:
+          - spread: node.id
 
   prometheus:
-    build:
-      context: .
-      dockerfile: ./monitoring/prometheus/Dockerfile
     image: ${DOCKER_USERNAME}/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -36,13 +42,11 @@ services:
       - "9090:9090"
     networks:
       - itu-minitwit-network
-    volumes:
-      - prometheus-data:/prometheus
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   grafana:
-    build:
-      context: .
-      dockerfile: ./monitoring/grafana/Dockerfile
     image: ${DOCKER_USERNAME}/grafana
     ports:
       - "3000:3000"
@@ -50,6 +54,9 @@ services:
       - itu-minitwit-network
     volumes:
       - grafana-storage:/var/lib/grafana
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   loki:
     image: grafana/loki:3.6.7
@@ -57,19 +64,17 @@ services:
       - "3100:3100"
       - "9095:9095"
     volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yaml
       - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     networks:
       - itu-minitwit-network
-    restart: unless-stopped
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   alloy:
     image: grafana/alloy:latest
-    volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock
-      - alloy-data:/var/lib/alloy/data
     command:
       - run
       - /etc/alloy/config.alloy
@@ -77,18 +82,14 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
     networks:
       - itu-minitwit-network
-    depends_on:
-      - loki
-    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+    deploy:
+      mode: global
 
 volumes:
-  loki-data:
-    name: minitwit-loki-data
-  alloy-data:
-    name: minitwit-alloy-data
   grafana-storage:
     name: minitwit-grafana-storage
-  prometheus-data:
-    name: minitwit-prometheus-data
-  db-data:
-    name: minitwit-data
+  loki-data:
+    name: minitwit-loki-data
