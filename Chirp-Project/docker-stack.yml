@@ -25,9 +25,6 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - itu-minitwit-network
-    depends_on:
-      - grafana
-      - prometheus
     deploy:
       replicas: 2
       rollback_config:
@@ -37,7 +34,11 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
-      
+
+      placement:
+        constraints: [node.role == worker]
+        preferences:
+          - spread: node.id
 
   prometheus:
     image: ${DOCKER_USERNAME}/prometheus
@@ -49,8 +50,9 @@ services:
       - "9090:9090"
     networks:
       - itu-minitwit-network
-    volumes:
-      - prometheus-data:/prometheus
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   grafana:
     image: ${DOCKER_USERNAME}/grafana
@@ -60,24 +62,27 @@ services:
       - itu-minitwit-network
     volumes:
       - grafana-storage:/var/lib/grafana
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   loki:
     image: grafana/loki:3.6.7
     ports:
       - "3100:3100"
+      - "9095:9095"
     volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yaml
       - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     networks:
       - itu-minitwit-network
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   alloy:
     image: grafana/alloy:latest
-    volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock
-      - alloy-data:/var/lib/alloy/data
     command:
       - run
       - /etc/alloy/config.alloy
@@ -85,17 +90,14 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
     networks:
       - itu-minitwit-network
-    depends_on:
-      - loki
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+    deploy:
+      mode: global
 
 volumes:
-  loki-data:
-    name: minitwit-loki-data
-  alloy-data:
-    name: minitwit-alloy-data
   grafana-storage:
     name: minitwit-grafana-storage
-  prometheus-data:
-    name: minitwit-prometheus-data
-  db-data:
-    name: minitwit-data
+  loki-data:
+    name: minitwit-loki-data
