@@ -25,9 +25,6 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - itu-minitwit-network
-    depends_on:
-      - grafana
-      - prometheus
     deploy:
       replicas: 2
       placement:
@@ -67,9 +64,9 @@ services:
       - "3100:3100"
       - "9095:9095"
     volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yaml
       - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     networks:
       - itu-minitwit-network
     deploy:
@@ -85,8 +82,9 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
     networks:
       - itu-minitwit-network
-    depends_on:
-      - loki
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
     deploy:
       mode: global
 
