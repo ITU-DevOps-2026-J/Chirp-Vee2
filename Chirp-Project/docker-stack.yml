@@ -32,6 +32,8 @@ services:
       replicas: 2
       placement:
         constraints: [node.role == worker]
+        preferences:
+          - spread: node.id
 
   prometheus:
     image: ${DOCKER_USERNAME}/prometheus
