@@ -30,6 +30,8 @@ services:
       - prometheus
     deploy:
       replicas: 2
+      placement:
+        constraints: [node.role == worker]
 
   prometheus:
     image: ${DOCKER_USERNAME}/prometheus
