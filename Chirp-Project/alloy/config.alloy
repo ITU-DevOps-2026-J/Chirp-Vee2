@@ -18,6 +18,12 @@ discovery.relabel "docker_logs" {
   }
 
   rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "service_name"
+  }
+
+  rule {
     source_labels = ["__meta_docker_container_log_stream"]
     target_label  = "stream"
   }
