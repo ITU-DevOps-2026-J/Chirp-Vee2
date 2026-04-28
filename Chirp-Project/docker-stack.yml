@@ -27,6 +27,14 @@ services:
       - itu-minitwit-network
     deploy:
       replicas: 2
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+
       placement:
         constraints: [node.role == worker]
         preferences:
