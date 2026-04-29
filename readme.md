@@ -13,6 +13,14 @@ To install docker, here is what you need to run on your computer.
 
 `sudo apt`
 `sudo apt install docker-ce`
+## Prerequisites
+The following is a list of things expected to be installed (and setup) such that you can run this project on your machine:
+* `Dotnet 10`
+* `Docker`
+* `Vagrant`
+  - `vagrant-digitalocean`
+  - `vagrant-scp`
+  - `vagrant-reload`
 
 ## How to run the program locally
 
