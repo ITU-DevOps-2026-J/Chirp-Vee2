@@ -110,6 +110,6 @@ jobs:
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
         run: |
           ssh $SSH_USER@$(cat Chirp-Project/minitwit2_ip.txt) -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no \
-          'MINITWIT_STACK_NAME=minitwit2 /vagrant/deploy.sh'
+          'MINITWIT_STACK_NAME=minitwit /vagrant/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
