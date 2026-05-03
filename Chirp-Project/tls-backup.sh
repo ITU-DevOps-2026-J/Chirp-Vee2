@@ -28,22 +28,10 @@ sudo systemctl restart nginx
 
 sudo apt update
 sudo apt install python3 python3-dev python3-venv libaugeas-dev gcc -y
-sudo python3 -m venv /opt/certbot/
-sudo /opt/certbot/bin/pip install --upgrade pip
-sudo /opt/certbot/bin/pip install certbot certbot-nginx
-sudo ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
 
 sudo ufw status
 sudo ufw allow 'Nginx Full'
 sudo ufw delete allow 'Nginx HTTP'
 sudo ufw allow ssh
 sudo ufw status
-
-sudo certbot --nginx -d veechirp.app \
-    --non-interactive \
-    --agree-tos \
-    -m dakl@itu.dk \
-    --redirect \
-    --keep-until-expiring
-
 
