@@ -34,8 +34,8 @@ sudo /opt/certbot/bin/pip install certbot certbot-nginx
 sudo ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
 
 sudo ufw status
+sudo ufw allow 'Nginx HTTP'
 sudo ufw allow 'Nginx Full'
-sudo ufw delete allow 'Nginx HTTP'
 sudo ufw allow ssh
 sudo ufw status
 
