@@ -7,6 +7,11 @@ server {
 
     server_name veechirp.app;
 
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/html;
+        default_type "text/plain";
+    }
+
     location / {
         proxy_pass http://localhost:8080;
         proxy_set_header Host $http_host;
@@ -20,6 +25,9 @@ server {
     }
 }
 EOF
+
+mkdir -p /var/www/html
+
 
 sudo ln -sf /etc/nginx/sites-available/veechirp.app /etc/nginx/sites-enabled/veechirp.app
 
