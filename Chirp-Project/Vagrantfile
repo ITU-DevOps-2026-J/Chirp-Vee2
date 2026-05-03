@@ -427,7 +427,7 @@ Vagrant.configure("2") do |config|
     server.trigger.before :up do |trigger|
           trigger.info =  "Waiting to create loadbalancer 2 until minitwits' IPs are available."
           trigger.ruby do |env,machine|
-          minitwit1_ip = "minitwit1_ip.txt"
+            minitwit1_ip = "minitwit1_ip.txt"
             minitwit2_ip = "minitwit2_ip.txt"
             while File.zero?(minitwit1_ip) || File.zero?(minitwit2_ip) do
               sleep(1)
