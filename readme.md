@@ -1,77 +1,101 @@
 # Chirp Vee2
 
 ## Monitoring demonstration
-![Monitoring-video-demonstration](Monitoring.gif)
+
+![Monitoring](Monitoring.gif)
 
 ## Logging demonstration
-![Logging-video-demonstration](Logging.gif)
+
+![Logging](Logging.gif)
 
 ## IAC demonstration
-![IAC-video-demonstration](IAC.gif)
+
+![IAC](IAC.gif)
 
 ## CI/CD demonstration
-![CI/CD-video-demonstration](CICD.gif)
 
-## Description
+![CI/CD](CICD.gif)
 
-This project acts as a base for learning devops, and is a minimal twitter clone.
+## Short project description
 
-## How to install
+Chirp Vee2 is a minimal Twitter-like application used as a hands-on DevOps learning project. It demonstrates infrastructure-as-code, containerisation, monitoring, logging and CI/CD patterns alongside a .NET web application.
 
-Once the repo is downloaded onto your computer, here is a few stuff you need to do to have the project up and running.
+## Key demos
 
-Installing Docker:
+- Monitoring: [Monitoring.gif](Monitoring.gif)
+- Logging: [Logging.gif](Logging.gif)
+- Infrastructure-as-Code: [IAC.gif](IAC.gif)
+- CI/CD flow: [CICD.gif](CICD.gif)
 
-To install docker, here is what you need to run on your computer.
-
-`sudo apt`
-`sudo apt install docker-ce`
 ## Prerequisites
-The following is a list of things expected to be installed (and setup) such that you can run this project on your machine:
-* `Dotnet 10`
-* `Docker`
-* `Vagrant`
-  - `vagrant-digitalocean`
-  - `vagrant-scp`
-  - `vagrant-reload`
 
-## How to run the program locally
+- .NET SDK 10 (net10.0 target: see [Chirp-Project/src/Web/Web.csproj](Chirp-Project/src/Web/Web.csproj#L1))
+- Docker Engine (and `docker compose` / Docker Compose v2)
+- Optional: Docker Swarm (for `docker stack` production deploys)
+- Optional: Vagrant + plugins (`vagrant-digitalocean`, `vagrant-scp`, `vagrant-reload`)
+- Git, make, and a container registry for production images (Docker Hub, GitHub Container Registry, etc.)
 
-To run the project either cd into Chirp Project/src/web and run `dotnet run`, then head to http://localhost:port, to see the project running.
+## Quick start — local development
 
-Another way to run the project is through docker.
-
-Start by building the docker image while in Chirp Project directory using: `docker build -t userid/imagename .`.
-
-Then run the image using: `docker run -p 8080:8080 userid/imagename`.
-
-## How to set up the pipeline
-
-You can run the project locally or online with the digital ocean droplet. run the following commands to have it up and running.
-
-Digital ocean:
+1. Clone the repo and change into the project folder:
 
 ```
-cd "Chirp Project"
-vagrant up
+git clone <repo-url>
+cd Chirp-Project
 ```
 
-Then head to Digital Ocean and find the ip of the droplet and head to <droplet-id>:8080, to see the applicaiton running.
-
-Locally:
-Rename Vagrantfile => Vagrantfile.remote
-Rename Vagrantfile.local => Vagrantfile
-Then:
+2. Run the web app locally with the .NET SDK:
 
 ```
-cd "Chirp Project"
-vagrant up
+cd Chirp-Project/src/Web
+dotnet restore
+dotnet build
+dotnet run
 ```
 
-Then head to http://localhost:8080 to see the application running.
+Open your browser at `http://localhost:8080` (or the URL shown in the console).
 
-Remember that each time you update any docker stuff, remember to write the following to make sure it can run.
+## Run locally with Docker Compose
 
-docker pull nickychengde/itu-minitwit
+From the repository root you can start services with Docker Compose (development):
 
+```
+docker compose -f Chirp-Project/docker-compose.yml up --build
+```
 
+This builds images and starts services defined in `Chirp-Project/docker-compose.yml`.
+
+## Production deploy (Docker Swarm)
+
+To deploy the application to digital ocean simply run `vagrant up` and then head to http://157.245.27.199:8080/. (This is assuming that the virtual IP 157.245.27.199 is already setup in DigitalOcean.)
+
+## CI/CD
+
+CI/CD examples are included in the repository (see pipeline demos and badges).
+
+The CI/CD pipeline for linting and security checking will automatically be triggered on any pull request and the continuous deployment pipeline will run on each push to main.
+
+## Testing
+
+- Unit, integration and end-to-end tests live under the `test/` folder. Run them with:
+
+```
+dotnet test test/UnitTest
+dotnet test test/IntegrationTest
+dotnet test test/End2EndTests
+```
+
+## Contributing
+
+- Fork the repository and create a feature branch `git checkout -b feat/your-change`.
+- Run the test suite and linters locally.
+- Open a pull request with a clear description and reference to any related issues.
+- CI will run builds and tests; maintainers will review and merge.
+
+## Important files
+
+- Compose: [Chirp-Project/docker-compose.yml](Chirp-Project/docker-compose.yml#L1)
+- Stack: [docker-stack.yml](docker-stack.yml#L1)
+- Web project: [Chirp-Project/src/Web/Web.csproj](Chirp-Project/src/Web/Web.csproj#L1)
+- Swarm helpers: [Chirp-Project/init_swarm_manager.sh](Chirp-Project/init_swarm_manager.sh#L1)
+- TLS / LB helpers: [Chirp-Project/tls.sh](Chirp-Project/tls.sh#L1) and [Chirp-Project/provision-lb.sh](Chirp-Project/provision-lb.sh#L1)
