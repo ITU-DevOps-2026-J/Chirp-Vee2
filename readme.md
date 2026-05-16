@@ -1,9 +1,12 @@
 # Chirp Vee2
 
-##Monitoring demonstration
+## Monitoring demonstration
 ![Monitoring-video-demonstration](Monitoring.gif)
 
-##IAC demonstration
+## Logging demonstration
+![Logging-video-demonstration](Logging.gif)
+
+## IAC demonstration
 ![IAC-video-demonstration](IAC.gif)
 
 ## Description
