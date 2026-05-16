@@ -1,4 +1,7 @@
 # Chirp Vee2
+
+![IAC-video-demonstration](IAC.gif)
+
 ## Description
 
 This project acts as a base for learning devops, and is a minimal twitter clone.
