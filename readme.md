@@ -10,7 +10,7 @@
 ![IAC-video-demonstration](IAC.gif)
 
 ## CI/CD demonstration
-![CI/CD-video-demonstration](CI-CD.gif)
+![CI/CD-video-demonstration](ci-cd.gif)
 
 ## Description
 
