@@ -6,7 +6,7 @@ LB2_IP=$(curl -fsS -H "Authorization: Bearer $DO_TOKEN" \
 import json, sys
 data = json.loads(sys.stdin.read())
 for d in data["droplets"]:
-    if d["name"] == "itu-minitwit-load-balancer2":
+    if d["name"] == "itu-minitwit-load-balancer2-test":
         for net in d["networks"]["v4"]:
             if net["type"] == "public":
                 print(net["ip_address"])
