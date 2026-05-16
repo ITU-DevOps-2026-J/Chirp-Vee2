@@ -9,6 +9,9 @@
 ## IAC demonstration
 ![IAC-video-demonstration](IAC.gif)
 
+## CI/CD demonstration
+![IAC-video-demonstration](CI:CD.gif)
+
 ## Description
 
 This project acts as a base for learning devops, and is a minimal twitter clone.
