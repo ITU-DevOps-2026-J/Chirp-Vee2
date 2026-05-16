@@ -392,7 +392,7 @@ Vagrant.configure("2") do |config|
 
       cd ../vagrant
       mkdir -p $HOME/.ssh
-      cp .lb_sync_id_rsa $HOME/.ssh/id_rsa
+      cp .lb_sync_id_rsa-test $HOME/.ssh/id_rsa
       chmod 600 $HOME/.ssh/id_rsa
       chmod +x minitwit-firewall.sh
       chmod +x prepare-lb-provision.sh
@@ -408,7 +408,7 @@ Vagrant.configure("2") do |config|
       #provide sync.sh with temp file containing id_rsa
       ./sync.sh
       rm -f $HOME/.ssh/id_rsa
-      rm -f .lb_sync_id_rsa
+      rm -f .lb_sync_id_rsa-test
     SHELL
   end
 
@@ -456,7 +456,7 @@ Vagrant.configure("2") do |config|
       chmod +x provision-lb.sh
       ./minitwit-firewall.sh
       ./prepare-lb-provision.sh itu-minitwit-load-balancer2-test BACKUP 200 "$(cat minitwit1_ip-test.txt)" "$(cat minitwit2_ip-test.txt)" "itu-minitwit-load-balancer-test"
-      rm -f .lb_sync_id_rsa
+      rm -f .lb_sync_id_rsa-test
     SHELL
   end
 
