@@ -25,3 +25,10 @@ jobs:
               with:
                         name: PDF
                         path: ./report/build/BSc_group_j.pdf
+            - name: Commit PDF to repo
+              run: |
+                    git config user.name "github-actions"
+                    git config user.email "github-actions@github.com"
+                    git add ./report/build/BSc_group_j.pdf
+                    git commit -m "Auto-generate PDF report"
+                    git push
