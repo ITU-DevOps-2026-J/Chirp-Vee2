@@ -1,0 +1,23 @@
+name: Report
+
+on:
+  push:
+    branches: ["main"]
+
+
+
+jobs:
+     build_latex:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Set up Git repository
+              uses: actions/checkout@v6
+            - name: Compile LaTeX document
+              uses: xu-cheng/latex-action@v4
+              with:
+                root_file: ./report/main.tex
+            - name: Upload PDF file
+              uses: actions/upload-artifact@v6
+              with:
+                name: PDF
+                path: ./report/build/BSc_group_j.pdf
