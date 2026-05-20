@@ -17,9 +17,11 @@ jobs:
               with:
                 root_file: main.tex
                 working_directory: report
-                args: -pdf -outdir=build -halt-on-error -file-line-error
+                args: -pdf -outdir=build -jobname=BSc_group_j -halt-on-error -file-line-error                
+            - name: Debug Output
+              run: find ./report -name "*.pdf"
             - name: Upload PDF file
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v4
               with:
-                name: PDF
-                path: ./report/build/BSc_group_j.pdf
+                        name: PDF
+                        path: ./report/build/BSc_group_j.pdf
